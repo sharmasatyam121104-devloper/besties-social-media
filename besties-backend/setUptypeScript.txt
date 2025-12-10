@@ -1,0 +1,23 @@
+step 1: initialize the project "npm init -y"
+step 2: intstall typescript as a dev-depend "npm i --save-dev typescript"
+step 3: install ts-node for compiliing ts code into js code "npm i --save-dev ts-node"
+step 4: install node js type "npm i --save-dev @types/node"
+step 5 : install express "npm i express"
+step 6: install express type "npm i --save-dev @types/express"
+step 7: nstall mongoose "npm i mongoose"
+step 8: install all you package u want
+step 9: create typescript conpiguration file in root directory "tsconfig.json"
+step 10: tsconfig.json file content
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "CommonJS",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "outDir": "./dist"
+    },
+    "include": ["src"],
+    "exclude": ["node_modules"]
+}
