@@ -5,12 +5,13 @@ import { useContext, useState } from "react"
 import Dashboard from "./Dashboard"
 import Context from "../../Context"
 import HttpInterceptor from "../../lib/HttpInterceptor"
+import {v4 as uuid} from 'uuid'
 
 const Layout = () => {
 
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
-  const { session } = useContext(Context)
+  const { session, setSession } = useContext(Context)
   const menu = [
     {
       herf: "/app/dashboard",
@@ -49,8 +50,9 @@ const Layout = () => {
       if(!input.files) return
 
       const file = input.files[0]
+      const path =`profile-pictures${uuid}.png`
       const payLoad = {
-        path: "demo/hello.png",
+        path,
         type: file.type,
       }
 
@@ -63,6 +65,9 @@ const Layout = () => {
         const { data } = await HttpInterceptor.post("/storage/upload", payLoad)
         await HttpInterceptor.put(data.url, file , options)
         console.log("success");
+        const {data: user} = await HttpInterceptor.put('/auth/profile-picture', {path})
+        setSession({...session , image:user.image})
+        
       } 
       catch (error) {
         console.log(error);
@@ -90,7 +95,7 @@ const Layout = () => {
              : (<Avatar 
                 title={session.fullname}
                 subtitle={session.email}
-                image="/photos/images.jpeg"
+                image={session.image || "/photos/images.jpeg"}
                 titleColor="white"
                 subtitleColor="#f5f5f5"
                 onClick={uploadImage}

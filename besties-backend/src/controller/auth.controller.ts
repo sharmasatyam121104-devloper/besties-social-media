@@ -3,7 +3,8 @@ import AuthModel from "../model/auth.model"
 import bcrypt from 'bcrypt'
 import jwt from "jsonwebtoken"
 import { catchError, tryError } from "../util/errorHandler"
-import { payloadIterface } from "../middleware/auth.middleware"
+import { payloadIterface, SessionInterface } from "../middleware/auth.middleware"
+import { downlodObject } from "../util/s3"
 
 
 const accessTokenExpiry = "10m"
@@ -46,6 +47,7 @@ export const login = async (req: Request, res: Response)=>{
             fullname: user.fullname,
             mobile: user.mobile,
             email: user.email,
+            image: (user.image ? await downlodObject(user.image) : null),
         }
         const options = {
             httpOnly: true,
@@ -80,5 +82,22 @@ export const getSession = async(req: Request, res: Response)=>{
     } catch (error) 
     {
         catchError(error,res,"Invalid session")
+    }
+}
+
+export const upadteProfile = async(req: SessionInterface, res: Response)=>{
+    try {
+        const path = req.body?.path
+
+        if(!path || !req.session){
+            throw tryError("Failed to upadte profile picture",400)
+        }
+
+        await AuthModel.updateOne({_id: req.session?.id},{$set: {image: path}})
+        const url = await downlodObject(path)
+        res.json({image: url})
+    } 
+    catch (error) {
+        catchError(error,res, "Failed to update Profile picture.")
     }
 }

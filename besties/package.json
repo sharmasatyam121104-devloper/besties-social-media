@@ -18,7 +18,8 @@
     "react-router-dom": "^7.10.0",
     "react-toastify": "^11.0.5",
     "remixicon": "^4.7.0",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

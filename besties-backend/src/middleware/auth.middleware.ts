@@ -8,9 +8,10 @@ import  jwt, { JwtPayload } from "jsonwebtoken";
     fullname: string
     email: string
     mobile: string
+    image: string | null
 }
 
-interface SessionInterface extends Request{
+export interface SessionInterface extends Request{
   session? : payloadIterface  
 }
 
@@ -28,6 +29,7 @@ export const AuthMiddleware = async(req: SessionInterface, res:Response, next:Ne
             email: payload.email,
             mobile: payload.mobile,
             fullname: payload.fullname,
+            image: payload.image
         }
         
         next()
