@@ -20,7 +20,7 @@ export const AuthMiddleware = async(req: SessionInterface, res:Response, next:Ne
         const accessToken = req.cookies?.accessToken
 
         if(!accessToken){
-            throw tryError("Unauthorized",401)
+            throw tryError("Failed to authorize user",401)
         }
 
         const payload = await jwt.verify(accessToken, process.env.AUTH_SECRET!) as JwtPayload

@@ -6,12 +6,22 @@ import Dashboard from "./Dashboard"
 import Context from "../../Context"
 import HttpInterceptor from "../../lib/HttpInterceptor"
 import {v4 as uuid} from 'uuid'
+import useSWR, { mutate } from "swr"
+import Fetcher from "../../lib/Fetcher"
+
+const EightMinInMs = 8*60*1000
 
 const Layout = () => {
 
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
   const { session, setSession } = useContext(Context)
+  const { error} = useSWR('/auth/refresh-token', Fetcher, {
+    refreshInterval: EightMinInMs, shouldRetryOnError: false
+  })
+
+  
+
   const menu = [
     {
       herf: "/app/dashboard",
@@ -50,7 +60,7 @@ const Layout = () => {
       if(!input.files) return
 
       const file = input.files[0]
-      const path =`profile-pictures${uuid}.png`
+      const path =`profile-pictures${uuid()}.png`
       const payLoad = {
         path,
         type: file.type,
@@ -66,7 +76,8 @@ const Layout = () => {
         await HttpInterceptor.put(data.url, file , options)
         console.log("success");
         const {data: user} = await HttpInterceptor.put('/auth/profile-picture', {path})
-        setSession({...session , image:user.image})
+        setSession({...session, image: user.image})
+        mutate('/auth/refresh-token')
         
       } 
       catch (error) {
@@ -90,7 +101,7 @@ const Layout = () => {
             session &&
             leftAsideSize === 137 
             ?   (<img 
-            src="/photos/images.jpeg" alt="" 
+            src={session.image || "/photos/images.jpeg"} alt="" 
             className="w-10 h-10 rounded-full object-cover"/>)
              : (<Avatar 
                 title={session.fullname}

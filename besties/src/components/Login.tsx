@@ -17,7 +17,7 @@ const Login = () => {
     } 
     catch (error: unknown) 
     {
-      CatchError(error,)
+      CatchError(error)
     }
   }
   return (

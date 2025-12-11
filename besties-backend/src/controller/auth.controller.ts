@@ -5,15 +5,30 @@ import jwt from "jsonwebtoken"
 import { catchError, tryError } from "../util/errorHandler"
 import { payloadIterface, SessionInterface } from "../middleware/auth.middleware"
 import { downlodObject } from "../util/s3"
+import {v4 as uuid} from 'uuid'
+import moment from "moment"
 
 
 const accessTokenExpiry = "10m"
-
-
+const tenMinutesInMs = ((10*60)*1000)
+const sevenDaysInMs =  (7*24*60*60)
  
 const genrateToken = (payload: payloadIterface)=>{
     const accessToken = jwt.sign(payload, process.env.AUTH_SECRET!, {expiresIn: accessTokenExpiry})
-    return accessToken
+    const refreshToken = uuid()
+    return {
+        accessToken,
+        refreshToken
+    }
+}
+
+const getOptions = (tokenType: "at" | "rt")=>{
+    return {
+            httpOnly: true,
+            maxAge: tokenType === "at" ? tenMinutesInMs : sevenDaysInMs,
+            secure: false,
+            domain: 'localhost'
+        }
 }
 
 export const signup = async (req: Request, res: Response)=>{
@@ -49,14 +64,12 @@ export const login = async (req: Request, res: Response)=>{
             email: user.email,
             image: (user.image ? await downlodObject(user.image) : null),
         }
-        const options = {
-            httpOnly: true,
-            maxAge: (10*60)*1000,
-            secure: false,
-            domain: 'localhost'
-        }
-        const accessToken = genrateToken(payload)
-        res.cookie("accessToken", accessToken, options)
+        const {accessToken, refreshToken } = genrateToken(payload)
+        await AuthModel.updateOne({_id: user._id}, {$set: {refreshToken, expiry:moment().add(7, 'days').toDate()}})
+
+        
+        res.cookie("accessToken", accessToken, getOptions('at'))
+        res.cookie("refreshToken", refreshToken, getOptions('rt'))
         res.json({message: "Login success"})
 
     } catch (error: unknown) 
@@ -65,9 +78,28 @@ export const login = async (req: Request, res: Response)=>{
     }
 }
 
-export const forgotPassword = (req: Request, res: Response)=>{
-    res.send("forgotPassword")
+export const refreshToken = async (req: SessionInterface, res: Response)=>{
+    try {
+        if(!req.session){
+           throw tryError("Failed to refresh token",401)
+        }
+        req.session.image = (req.session.image ? await downlodObject(req.session.image) : null)
+       const {accessToken,refreshToken} = genrateToken(req.session)
+       await AuthModel.updateOne({_id: req.session.id},{$set: {
+        refreshToken,
+        expiry: moment().add(7,"days").toDate()
+       }})
+
+       res.cookie("accessToken", accessToken, getOptions('at'))
+        res.cookie("refreshToken", refreshToken, getOptions('rt'))
+        res.json({message: "Token refreshed"})
+       
+    } 
+    catch (error) {
+        catchError(error,res, "Failed to refresh token.")
+    }
 }
+
 
 export const getSession = async(req: Request, res: Response)=>{
     try {
@@ -84,6 +116,7 @@ export const getSession = async(req: Request, res: Response)=>{
         catchError(error,res,"Invalid session")
     }
 }
+
 
 export const upadteProfile = async(req: SessionInterface, res: Response)=>{
     try {
