@@ -1,13 +1,14 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import Avatar from "../shared/Avatar"
 import Card from "../shared/Card"
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import Dashboard from "./Dashboard"
 import Context from "../../Context"
 import HttpInterceptor from "../../lib/HttpInterceptor"
 import {v4 as uuid} from 'uuid'
 import useSWR, { mutate } from "swr"
 import Fetcher from "../../lib/Fetcher"
+import CatchError from "../../lib/CatchError"
 
 const EightMinInMs = 8*60*1000
 
@@ -15,12 +16,18 @@ const Layout = () => {
 
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { session, setSession } = useContext(Context)
   const { error} = useSWR('/auth/refresh-token', Fetcher, {
     refreshInterval: EightMinInMs, shouldRetryOnError: false
   })
 
-  
+  useEffect(()=>{
+    if(error)
+      {
+        handleLogout()
+    }
+  },[error])  
 
   const menu = [
     {
@@ -40,6 +47,16 @@ const Layout = () => {
     },
 
   ]
+
+  const handleLogout = async()=>{
+    try {
+      await HttpInterceptor.post('/auth/logout')
+      navigate("/login")
+    } 
+    catch (error) {
+      CatchError(error)  
+    }
+  }
 
   const getPathname = (path: string)=>{
     return path.split('/').pop()?.split("-").join(' ')
@@ -126,7 +143,7 @@ const Layout = () => {
               </Link>
                 ))
               }
-              <button title="Logout" className="flex items-center gap-2 text-gray-300 py-3 hover:text-gray-50 cursor-pointer px-2">
+              <button title="Logout" onClick={handleLogout} className="flex items-center gap-2 text-gray-300 py-3 hover:text-gray-50 cursor-pointer px-2">
                 <i className="ri-logout-circle-r-line text-2xl"></i>
                 {
                   leftAsideSize === 350 &&

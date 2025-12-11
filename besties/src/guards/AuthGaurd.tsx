@@ -1,10 +1,11 @@
 import { useContext, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import HttpInterceptor from "./lib/HttpInterceptor";
-import Context from "./Context";
+import Context from "../Context";
+import HttpInterceptor from "../lib/HttpInterceptor";
 
 
-const Gaurd = () => {
+
+const AuthGaurd = () => {
     const { session, setSession} = useContext(Context)
 
     const getSession = async()=>{
@@ -36,4 +37,4 @@ const Gaurd = () => {
 
 }
 
-export default Gaurd;
+export default AuthGaurd;

@@ -13,9 +13,10 @@ import Video from "./components/app/Video"
 import Audio from "./components/app/Audio"
 import Chat from "./components/app/Chat"
 import NotFound from "./components/NotFound"
-import Gaurd from "./Gaurd"
 import Context from "./Context"
 import { useState } from "react"
+import AuthGaurd from "./guards/AuthGaurd"
+import RedirectGaurd from "./guards/RedirectGaurd"
 
 
 const App = () => {
@@ -25,9 +26,11 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home/>}/>
-            <Route path="/login" element={<Login/>}/>
-            <Route path="/signup" element={<Signup/>}/>
-          <Route element={<Gaurd/>}>
+            <Route element={<RedirectGaurd/>}>
+              <Route path="/login" element={<Login/>}/>
+              <Route path="/signup" element={<Signup/>}/>
+            </Route>
+          <Route element={<AuthGaurd/>}>
             <Route path="/app" element={<Layout/>}>
               <Route path="dashboard" element={<Dashboard/>}/>
               <Route path="friends" element={<Friends/>}/>
