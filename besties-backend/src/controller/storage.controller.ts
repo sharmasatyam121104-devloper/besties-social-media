@@ -26,12 +26,13 @@ export const uploadFile = async(req:Request, res:Response)=>{
     try {
         const path = req.body?.path
         const type = req.body?.type
+        const status = req.body?.status
 
-        if(!path || !type){
+        if(!path || !type || !status){
             throw tryError("Invalid Request path or type are required", 400)
         }
 
-        const url = await uploadObject(path, type)
+        const url = await uploadObject(path, type, status)
         res.json({url})
     } 
     catch (error) {

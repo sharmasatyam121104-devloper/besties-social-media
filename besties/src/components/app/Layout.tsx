@@ -78,10 +78,11 @@ const Layout = () => {
       if(!input.files) return
 
       const file = input.files[0]
-      const path =`profile-pictures${uuid()}.png`
+      const path =`profile-pictures/${uuid()}.png`
       const payLoad = {
         path,
         type: file.type,
+        status: "public-read"
       }
 
       try {

@@ -62,7 +62,7 @@ export const login = async (req: Request, res: Response)=>{
             fullname: user.fullname,
             mobile: user.mobile,
             email: user.email,
-            image: (user.image ? await downlodObject(user.image) : null),
+            image: user?.image,
         }
         const {accessToken, refreshToken } = genrateToken(payload)
         await AuthModel.updateOne({_id: user._id}, {$set: {refreshToken, expiry:moment().add(7, 'days').toDate()}})
@@ -80,10 +80,11 @@ export const login = async (req: Request, res: Response)=>{
 
 export const refreshToken = async (req: SessionInterface, res: Response)=>{
     try {
+
         if(!req.session){
            throw tryError("Failed to refresh token",401)
         }
-        req.session.image = (req.session.image ? await downlodObject(req.session.image) : null)
+       
        const {accessToken,refreshToken} = genrateToken(req.session)
        await AuthModel.updateOne({_id: req.session.id},{$set: {
         refreshToken,
@@ -120,15 +121,14 @@ export const getSession = async(req: Request, res: Response)=>{
 
 export const upadteProfile = async(req: SessionInterface, res: Response)=>{
     try {
-        const path = req.body?.path
+        const path = `${process.env.S3_URL}/${req.body?.path}`
 
         if(!path || !req.session){
             throw tryError("Failed to upadte profile picture",400)
         }
 
         await AuthModel.updateOne({_id: req.session?.id},{$set: {image: path}})
-        const url = await downlodObject(path)
-        res.json({image: url})
+        res.json({image: path})
     } 
     catch (error) {
         catchError(error,res, "Failed to update Profile picture.")
