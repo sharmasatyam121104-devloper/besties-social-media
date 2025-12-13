@@ -9,6 +9,7 @@ import {v4 as uuid} from 'uuid'
 import useSWR, { mutate } from "swr"
 import Fetcher from "../../lib/Fetcher"
 import CatchError from "../../lib/CatchError"
+import Friendsuggestion from "./Friendsuggestion"
 
 const EightMinInMs = 8*60*1000
 
@@ -186,26 +187,7 @@ const Layout = () => {
 
       <aside className="bg-white w-[450px] fixed top-0 right-1 h-full p-8 overflow-auto space-y-8">
         <div className="h-[250px] overflow-y-hidden">
-            <Card title="Suggested" divider>
-              <div className="space-y-8 h-[170px] overflow-y-auto">
-                  {
-                    Array(20).fill(0).map((item,index)=>(
-                      <div key={index+item} className="flex gap-4">
-                        <img src="/photos/images.jpeg" alt="avt" 
-                        className="h-16 w-16 rounded object-cover"
-                        />
-                        <div>
-                          <h1 className="text-black font-medium">Ravi Ranjan Kumar</h1>
-                          <button className="bg-green-400 text-white rounded px-2 py-1 text-xs hover:bg-green-500 mt-1">
-                              <i className="ri-user-add-line mr-1"></i>
-                              Add Friend
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  }
-              </div>
-            </Card>
+            <Friendsuggestion />
         </div>
         <Card title="Friends" divider>
           <div className="space-y-5">

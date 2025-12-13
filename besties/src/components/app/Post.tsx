@@ -22,7 +22,7 @@ const Post = () => {
             </div>
           </div>
           <Divider />
-          <div className="space-x-4">
+          <div className="space-x-4 flex">
             <Button icon="thumb-up-line" type="info">20k</Button>
             <Button icon="thumb-down-line" type="warning">20k</Button>
             <Button icon="chat-ai-line" type="danger">20k</Button>
