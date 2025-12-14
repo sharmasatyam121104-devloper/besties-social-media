@@ -12,7 +12,7 @@ interface CardInterface {
 
 const Card: FC<CardInterface> = ({noPadding=false ,key=0,children, title, footer ,divider=false}) => {
   return (
-    <div key={key} className={`bg-white shadow-lg ${noPadding ? '' : 'px-5 py-4'} rounded-lg border border-gray-100 space-y-2`}>
+    <div key={key} className={`bg-white shadow-xl ${noPadding ? '' : 'px-5 py-4'} rounded-lg border border-gray-100 space-y-2`}>
       {
         title &&
         <h1 className='text-lg font-semibold capitalize'>{title}</h1>

@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import Avatar from "../shared/Avatar"
 import Card from "../shared/Card"
-import { useContext, useEffect, useState } from "react"
+import { useCallback, useContext, useEffect, useState } from "react"
 import Dashboard from "./Dashboard"
 import Context from "../../Context"
 import HttpInterceptor from "../../lib/HttpInterceptor"
@@ -10,26 +10,22 @@ import useSWR, { mutate } from "swr"
 import Fetcher from "../../lib/Fetcher"
 import CatchError from "../../lib/CatchError"
 import Friendsuggestion from "./Friendsuggestion"
+import FriendRequest from "./FriendRequest"
 
 const EightMinInMs = 8*60*1000
 
 const Layout = () => {
-
+  // console.log("ffgg");
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { session, setSession } = useContext(Context)
+
   const { error} = useSWR('/auth/refresh-token', Fetcher, {
     refreshInterval: EightMinInMs, shouldRetryOnError: false
   })
 
-  useEffect(()=>{
-    if(error)
-      {
-        handleLogout()
-    }
-  },[error])  
-
+  
   const menu = [
     {
       herf: "/app/dashboard",
@@ -46,18 +42,25 @@ const Layout = () => {
       icon: "ri-group-line",
       label: "Friends",
     },
-
+    
   ]
 
-  const handleLogout = async()=>{
+ const handleLogout = useCallback(async () => {
     try {
-      await HttpInterceptor.post('/auth/logout')
+      await HttpInterceptor.post("/auth/logout")
       navigate("/login")
-    } 
-    catch (error) {
-      CatchError(error)  
+    } catch (error) {
+      CatchError(error)
     }
-  }
+  }, [navigate])
+
+  useEffect(() => {
+
+    if (error) {
+      handleLogout()
+    }
+    
+  }, [error, handleLogout])
 
   const getPathname = (path: string)=>{
     return path.split('/').pop()?.split("-").join(' ')
@@ -187,8 +190,11 @@ const Layout = () => {
       </section>
 
       <aside className="bg-white w-[450px] fixed top-0 right-1 h-full p-8 overflow-auto space-y-8">
-        <div className="h-[250px] overflow-y-hidden">
+        <div className="h-[258px] overflow-y-hidden shadow-lg">
             <Friendsuggestion />
+        </div>
+        <div className="h-[258px] overflow-y-hidden shadow-lg mb-8 rounded-b-xl">
+            <FriendRequest/>
         </div>
         <Card title="Friends" divider>
           <div className="space-y-5">

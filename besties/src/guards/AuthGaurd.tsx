@@ -2,6 +2,7 @@ import { useContext, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import Context from "../Context";
 import HttpInterceptor from "../lib/HttpInterceptor";
+import { Skeleton } from "antd";
 
 
 
@@ -24,7 +25,7 @@ const AuthGaurd = () => {
     },[])
 
     if(session === null){
-        return  null
+        return  <Skeleton active/>
     }
 
     if(session === false){

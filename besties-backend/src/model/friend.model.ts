@@ -17,11 +17,6 @@ const friendSchema = new Schema(
       enum: ["requested", "rejected", "accepted"],
       default: "requested",
     },
-    type: {
-        type: String,
-        enum: ['sent', 'recieved'],
-        default:'sent'
-    }
   },
   { timestamps: true }
 );

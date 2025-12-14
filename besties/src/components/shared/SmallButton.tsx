@@ -21,7 +21,7 @@ interface SmallButtonInterface {
 }
 
 const SmallButton: FC<SmallButtonInterface> = ({
-  children = "Submit",
+  children ,
   type = "primary",
   onClick,
   icon,
