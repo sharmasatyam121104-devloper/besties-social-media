@@ -52,7 +52,7 @@ const Friends = () => {
   }
 
   return (
-    <div className="h-[575px] overflow-y-auto">
+    <div className="md:h-[575px]  overflow-y-auto">
       
         {data?.friends?.length === 0 && (
           <div className="h-[400px] flex items-center justify-center">
@@ -60,7 +60,7 @@ const Friends = () => {
           </div>
         )}
 
-      <div className="grid grid-cols-3 gap-8 px-5">
+      <div className="grid md:grid-cols-3 grid-cols-1 md:gap-8 gap-4 px-5">
         {data?.friends?.map((item: ItemInterface, index: number) => {
           // frontend me decide kaun friend hai
           const friend = item.user.email === currentUserId ? item.friend : item.user

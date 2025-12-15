@@ -6,11 +6,13 @@ import Form, { type FormDataType } from "./shared/Form"
 import HttpInterceptor from "../lib/HttpInterceptor"
 import { toast } from "react-toastify"
 import CatchError from "../lib/CatchError"
+import { useMediaQuery } from "react-responsive"
 
 
 
 const Signup = () => {
   const navigate = useNavigate()
+  const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
   const handleSignup = async (value: FormDataType)=>{
     try {
       const {data} = await HttpInterceptor.post("/auth/signup", value)
@@ -22,51 +24,102 @@ const Signup = () => {
     }
   }
   return (
-    <div className="bg-gray-100 flex items-center justify-center h-screen">
-      <div className="w-6/12 animate__animated animate__fadeIn">
-        <Card noPadding>
-          <div className="grid grid-cols-2">
-            <div className="p-8 space-y-6">
-              <div>
-                <h1 className="text-xl font-bold text-black">SIGN UP</h1>
-                <p className="text-gray-500">Start your first chat now !</p>
+    <>
+    {
+      isTabletOrMobile && 
+            <div>
+              <div className="overflow-hidden h-70 w-50 mx-auto my-5  bg-linear-to-t from-sky-500 to-indigo-500 flex items-center justify-center rounded-xl">
+                <img src="/photos/login.svg" alt="auth" className="w-50 h-50 animate__animated animate__slideInUp animate__faster" />
               </div>
-              <Form className="space-y-6" onValue={handleSignup}>
-                <Input 
-                  name="fullname"
-                  placeholder="Fullname"
-                />
+              <Card noPadding divider={false} shadow={false}>
+                <div className="">
+                  <div className="p-8 space-y-6">
+                    <div>
+                      <h1 className="text-xl font-bold text-black">SIGN UP</h1>
+                      <p className="text-gray-500">Start your first chat now !</p>
+                    </div>
+                    <Form className="space-y-6" onValue = {handleSignup}>
+                      <Input 
+                        name="fullname"
+                        placeholder="Fullname"
+                      />
 
-                <Input 
-                  name="email"
-                  placeholder="Email id"
-                />
+                      <Input 
+                        name="email"
+                        placeholder="Email id"
+                      />
 
-                <Input 
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                />
+                      <Input 
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                      />
 
-                <Input 
-                  name="mobile"
-                  placeholder="Mobile"
-                />
+                      <Input 
+                        name="mobile"
+                        placeholder="Mobile"
+                      />
+                      <Button type="danger" icon="arrow-right-up-line">Sign up</Button>
+                    </Form>
+                    <div className="flex gap-2">
+                      <p>Don`t` have an account ?</p>
+                      <Link to="/login" className="text-green-400 font-medium hover:underline">Sign in</Link>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+    }
 
-                <Button type="danger" icon="arrow-right-up-line">Sign up</Button>
-              </Form>
-              <div className="flex gap-2">
-                <p>Already have an account ?</p>
-                <Link to="/login" className="text-green-400 font-medium hover:underline">Sign in</Link>
+    {
+      !isTabletOrMobile &&
+      <div className="bg-gray-100 flex items-center justify-center h-screen">
+        <div className="w-6/12 animate__animated animate__fadeIn">
+          <Card noPadding>
+            <div className="grid grid-cols-2">
+              <div className="p-8 space-y-6">
+                <div>
+                  <h1 className="text-xl font-bold text-black">SIGN UP</h1>
+                  <p className="text-gray-500">Start your first chat now !</p>
+                </div>
+                <Form className="space-y-6" onValue={handleSignup}>
+                  <Input 
+                    name="fullname"
+                    placeholder="Fullname"
+                  />
+
+                  <Input 
+                    name="email"
+                    placeholder="Email id"
+                  />
+
+                  <Input 
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                  />
+
+                  <Input 
+                    name="mobile"
+                    placeholder="Mobile"
+                  />
+
+                  <Button type="danger" icon="arrow-right-up-line">Sign up</Button>
+                </Form>
+                <div className="flex gap-2">
+                  <p>Already have an account ?</p>
+                  <Link to="/login" className="text-green-400 font-medium hover:underline">Sign in</Link>
+                </div>
+              </div>
+              <div className="overflow-hidden h-[500px] bg-linear-to-t from-sky-500 to-indigo-500 flex items-center justify-center rounded-r-xl">
+                  <img src="/photos/auth.svg" alt="auth" className="w-full animate__animated animate__slideInUp animate__faster" />
               </div>
             </div>
-            <div className="overflow-hidden h-[500px] bg-linear-to-t from-sky-500 to-indigo-500 flex items-center justify-center rounded-r-xl">
-                <img src="/photos/auth.svg" alt="auth" className="w-full animate__animated animate__slideInUp animate__faster" />
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>
+    }
+    </>
   )
 }
 

@@ -5,10 +5,10 @@ import Input from "../shared/Input";
 const Chat = () => {
   return (
     <div>
-        <div className="h-[500px] overflow-y-auto space-y-8 ">
+        <div className="h-[700px] md:h-[500px] overflow-y-auto space-y-8 ">
             {
                 Array(20).fill(0).map((item,index)=>(
-                    <div key={index || item} className="space-y-12 p-6">
+                    <div key={index || item} className="md:space-y-12 space-y-6 md:p-6 p-2">
                         <div className="flex gap-4 items-start">
                             <Avatar image="/photos/images.jpeg"/>
                             <div className=" relative bg-[#E8F0FE] py-2 px-2 rounded-xl flex-1 text-[#1A2B4B] shadow-lg">

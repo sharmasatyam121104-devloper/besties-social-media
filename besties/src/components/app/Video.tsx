@@ -18,8 +18,8 @@ const Video = () => {
         </button>
       </div>
 
-        <div className="grid grid-cols-3 gap-4">
-           <div className="bg-black w-full h-0 relative pb-[56.25%] rounded-xl">
+        <div className="grid md:grid-cols-3 grid-cols-2 gap-4">
+           <div className="bg-black w-full h-0  relative pb-[56.25%] rounded-xl">
                 <video className="w-full h-full absolute top-0 left-0">
                 </video>
                 <button className="absolute bottom-5 left-5 text-xs px-2.5 py-1 rounded-lg text-white " style={{

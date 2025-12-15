@@ -74,7 +74,7 @@ const FriendRequest = () => {
   }
 
   return (
-    <div className="h-[250px]">
+    <div className="md:h-[250px] h-190 sm:overflow-y-hidden">
       <Card title="Friend Requests" divider>
         {isLoading && <Skeleton active />}
 
@@ -84,7 +84,7 @@ const FriendRequest = () => {
           <Empty description="Not found any friends request."/>
         )}
 
-        <div className="h-[180px] overflow-y-auto space-y-4 pr-1">
+        <div className="md:h-[180px] overflow-y-auto space-y-4 pr-1">
           {data?.friends?.map((item: ItemInterface, index: number) => (
             <div
               key={item._id}

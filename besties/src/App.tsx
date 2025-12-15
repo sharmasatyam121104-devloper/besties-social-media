@@ -17,6 +17,8 @@ import Context from "./Context"
 import { useState } from "react"
 import AuthGaurd from "./guards/AuthGaurd"
 import RedirectGaurd from "./guards/RedirectGaurd"
+import Friendsuggestion from "./components/app/Friendsuggestion"
+import FriendRequest from "./components/app/FriendRequest"
 
 
 const App = () => {
@@ -38,6 +40,8 @@ const App = () => {
               <Route path="video-chat" element={<Video/>}/>
               <Route path="audio-chat" element={<Audio/>}/>
               <Route path="chat" element={<Chat/>}/>
+              <Route path="suggestion" element={<Friendsuggestion/>}/>
+              <Route path="accept-friend-request" element={<FriendRequest/>}/>
             </Route>
           </Route>
             <Route path="*" element={<NotFound />} />

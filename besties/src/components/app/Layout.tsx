@@ -11,22 +11,27 @@ import Fetcher from "../../lib/Fetcher"
 import CatchError from "../../lib/CatchError"
 import Friendsuggestion from "./Friendsuggestion"
 import FriendRequest from "./FriendRequest"
+import { useMediaQuery } from "react-responsive"
+import Logo from "../shared/Logo"
 
 const EightMinInMs = 8*60*1000
 
 const Layout = () => {
-  // console.log("ffgg");
+
+  const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { session, setSession } = useContext(Context)
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+
 
   const { error} = useSWR('/auth/refresh-token', Fetcher, {
     refreshInterval: EightMinInMs, shouldRetryOnError: false
   })
 
   
-  const menu = [
+  const baseMenu = [
     {
       herf: "/app/dashboard",
       icon: "ri-dashboard-line",
@@ -44,6 +49,24 @@ const Layout = () => {
     },
     
   ]
+
+  const mobileMenu = [
+  {
+    herf: "/app/suggestion",
+    icon: "ri-function-add-line",
+    label: "Add new friend",
+  },
+  {
+    herf: "/app/accept-friend-request",
+    icon: "ri-user-add-line",
+    label: "Friend Requests",
+  },
+]
+
+const menu = isTabletOrMobile
+  ? [...baseMenu, ...mobileMenu]
+  : baseMenu
+
 
  const handleLogout = useCallback(async () => {
     try {
@@ -107,11 +130,127 @@ const Layout = () => {
       }
      
     }
-
   }
 
+
   return (
-    <div className=" min-h-screen ">
+    <>
+
+    {
+      isTabletOrMobile && 
+      <div className="h-screen flex flex-col">
+
+        {/* <MobileSideBar/> */}
+        {isTabletOrMobile && isMobileSidebarOpen && (
+          <>
+            {/* Overlay */}
+            <div
+              className="fixed inset-0 bg-black/40 z-999 "
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+
+            {/* Sidebar */}
+            <aside className="fixed top-0 left-0 h-full w-[280px] bg-[linear-gradient(135deg,#1f1b3f,#0b0f2e)] z-1000 p-4 animate__animated animate__fadeInLeft animate__faster">
+              
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                {
+                  session &&
+                  leftAsideSize === 137 
+                  ?   (<img 
+                  src={session.image || "/photos/images.jpeg"} alt="" 
+                  className="w-10 h-10 rounded-full object-cover"/>)
+                  : (<Avatar 
+                      title={session.fullname}
+                      subtitle={session.email}
+                      image={session.image || "/photos/images.jpeg"}
+                      titleColor="white"
+                      subtitleColor="#f5f5f5"
+                      onClick={uploadImage}
+                    />)
+                  }
+                  <button
+                    className="text-white text-2xl ml-10"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                  >
+                    <i className="ri-close-line"></i>
+                  </button>
+                </div>
+
+              {/* Menu */}
+              <div className="space-y-2">
+                {menu.map((item, index) => (
+                  <Link
+                    key={index}
+                    to={item.herf}
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-200 hover:bg-white/10"
+                  >
+                    <i className={`${item.icon} text-2xl`} />
+                    <span className="text-xl capitalize">{item.label}</span>
+                  </Link>
+                ))}
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-red-400 hover:bg-white/10 w-full text-xl"
+                >
+                  <i className="ri-logout-circle-r-line text-2xl" />
+                  Logout
+                </button>
+              </div>
+            </aside>
+          </>
+        )}
+
+        {/* Navbar */}
+        <nav className="bg-[linear-gradient(135deg,#1f1b3f,#0b0f2e)] h-16 w-full py-2 px-3 flex justify-between items-center sticky top-0 z-50">
+          <button className="text-white" onClick={() => setIsMobileSidebarOpen(true)}>
+            <i className="ri-menu-line text-3xl"></i>
+          </button>
+          <div>
+            <Logo />
+          </div>
+          <div>
+            {session ? (
+              <img
+                src={session.image || "/photos/images.jpeg"}
+                alt=""
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <Avatar
+                title={session.fullname}
+                subtitle={session.email}
+                image={session.image || "/photos/images.jpeg"}
+                titleColor="white"
+                subtitleColor="#f5f5f5"
+                onClick={uploadImage}
+              />
+            )}
+          </div>
+        </nav>
+
+        {/* Pathname heading sticky under navbar */}
+        <div className="sticky top-16  z-40 px-4 py-2">
+          <h1 className="text-gray-700 text-xl font-bold capitalize">{getPathname(pathname)}</h1>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto ">
+          <Card >
+            {pathname === "/app" ? <Dashboard /> : <Outlet />}
+          </Card>
+        </div>
+
+      </div>
+
+    }
+
+    { 
+      !isTabletOrMobile &&
+      <div className=" min-h-screen ">
       <aside 
       className={`bg-white w-[${leftAsideSize}px] fixed top-0 left-0 h-full p-8 overflow-y-auto  text-white transition-all duration-300`}
       style={{
@@ -238,7 +377,9 @@ const Layout = () => {
         </Card>
       </aside>
       
-    </div>
+      </div>
+    }
+    </>
   )
 }
 

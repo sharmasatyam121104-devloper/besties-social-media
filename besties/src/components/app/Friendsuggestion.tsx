@@ -45,14 +45,14 @@ const Friendsuggestion = () => {
     }
 
   return (
-    <div className="h-[250px] ">
+    <div className="md:h-[250px] overflow-hidden ">
       <Card title="Add new friend" divider>
 
         {isLoading && <Skeleton active />}
 
         {error && <Error message={error?.message} />}
 
-        <div className="h-[180px] overflow-y-auto space-y-4 pr-1">
+        <div className="md:h-[180px] overflow-y-auto space-y-4 pr-1  ">
           {data?.suggestions?.map((item: ItemInterface, index: number) => (
             <div
               key={index}
