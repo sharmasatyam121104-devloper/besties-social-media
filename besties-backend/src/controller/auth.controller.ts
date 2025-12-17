@@ -9,9 +9,9 @@ import {v4 as uuid} from 'uuid'
 import moment from "moment"
 
 
-const accessTokenExpiry = "10m"
+const accessTokenExpiry = "10m"   
 const tenMinutesInMs = ((10*60)*1000)
-const sevenDaysInMs =  (7*24*60*60)
+const sevenDaysInMs = (7 * 24 * 60 * 60 * 1000)
  
 const genrateToken = (payload: payloadIterface)=>{
     const accessToken = jwt.sign(payload, process.env.AUTH_SECRET!, {expiresIn: accessTokenExpiry})

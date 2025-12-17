@@ -19,6 +19,7 @@ import AuthGaurd from "./guards/AuthGaurd"
 import RedirectGaurd from "./guards/RedirectGaurd"
 import Friendsuggestion from "./components/app/Friendsuggestion"
 import FriendRequest from "./components/app/FriendRequest"
+import OnlineFriends from "./components/app/OnlineFriends"
 
 
 const App = () => {
@@ -42,6 +43,7 @@ const App = () => {
               <Route path="chat" element={<Chat/>}/>
               <Route path="suggestion" element={<Friendsuggestion/>}/>
               <Route path="accept-friend-request" element={<FriendRequest/>}/>
+              <Route path="online-friends" element={<OnlineFriends/>}/>
             </Route>
           </Route>
             <Route path="*" element={<NotFound />} />

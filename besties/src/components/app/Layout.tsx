@@ -13,6 +13,7 @@ import Friendsuggestion from "./Friendsuggestion"
 import FriendRequest from "./FriendRequest"
 import { useMediaQuery } from "react-responsive"
 import Logo from "../shared/Logo"
+import OnlineFriends from "./OnlineFriends"
 
 const EightMinInMs = 8*60*1000
 
@@ -51,6 +52,11 @@ const Layout = () => {
   ]
 
   const mobileMenu = [
+  {
+    herf: "/app/online-friends",
+    icon: "ri-user-star-line ",
+    label: "Online Friends",
+  },
   {
     herf: "/app/suggestion",
     icon: "ri-function-add-line",
@@ -335,46 +341,9 @@ const menu = isTabletOrMobile
         <div className="h-[258px] overflow-y-hidden shadow-lg mb-8 rounded-b-xl">
             <FriendRequest/>
         </div>
-        <Card title="Friends" divider>
-          <div className="space-y-5">
-            {
-              Array(20).fill(0).map((item, index)=>(
-                <div key={index || item} className="bg-gray-50 p-3 rounded-lg flex justify-between">
-                  <Avatar
-                  size="md"
-                  image="/photos/images.jpeg"
-                  title="Satyam Sharma"
-                  subtitle={
-                    <small className={`${index % 2 === 0 ? 'text-zinc-400' : 'text-green-400 font-medium' }`}>
-                      {index % 2 === 0 ? 'Ofline' : 'Online'}
-                    </small>
-                  }
-                />
-                <div className="space-x-3">
-                  <Link to="/app/chat">
-                    <button className="hover:text-blue-600 text-blue-500 cursor-pointer" title="Chat">
-                      <i className="ri-chat-ai-line"></i>
-                    </button>
-                  </Link>
-
-                  <Link to="/app/audio-chat">
-                    <button className="hover:text-green-500 text-green-400 cursor-pointer" title="Call">
-                      <i className="ri-phone-line"></i>
-                    </button>
-                  </Link>
-
-                  <Link to='/app/video-chat'>
-                    <button className="hover:text-amber-600 text-amber-500 cursor-pointer" title="Video Call">
-                    <i className="ri-video-on-line"></i>
-                  </button>
-                  </Link>
-
-                </div>
-                </div>
-              ))
-            }
-          </div>
-        </Card>
+        <div className="">
+          <OnlineFriends/>
+        </div>
       </aside>
       
       </div>
