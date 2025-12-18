@@ -110,7 +110,7 @@ const Friends = () => {
 
                       {/* CHAT */}
                       <Link
-                        to={`/app/chat`}
+                        to={`/app/chat/${friend._id}`}
                         className="text-blue-500 hover:text-blue-600 text-xl cursor-pointer"
                       >
                         <i className="ri-chat-1-line"></i>

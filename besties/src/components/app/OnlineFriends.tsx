@@ -4,6 +4,7 @@ import Card from '../shared/Card';
 import { useContext, useEffect, useState } from 'react';
 import socket from '../../lib/socket';
 import Context from '../../Context';
+import { Empty } from 'antd';
 
 export interface OnlineUserInterface {
   id: string
@@ -28,11 +29,13 @@ const OnlineFriends = () => {
     socket.emit("get-online")
   },[])
 
-  console.log(onlineUsers);
   return (
     <div className='overflow-y-auto md:h-full h-189'>
       <Card title="Online Friends" divider noPadding={false}>
           <div className="space-y-5 ">
+            {onlineUsers.length === 1 && (
+              <Empty description="Looks like no users are online right now"/>
+            )}
             {
               session && onlineUsers.filter((item: OnlineUserInterface)=>item.id !== session.id).map((item: OnlineUserInterface, index)=>(
                 <div key={index} className="bg-gray-50 p-3 rounded-lg flex justify-between">
@@ -47,7 +50,7 @@ const OnlineFriends = () => {
                   }
                 />
                 <div className="space-x-3">
-                  <Link to="/app/chat">
+                  <Link to={`/app/chat/${item.id}`}>
                     <button className="hover:text-blue-600 text-blue-500 cursor-pointer" title="Chat">
                       <i className="ri-chat-ai-line"></i>
                     </button>

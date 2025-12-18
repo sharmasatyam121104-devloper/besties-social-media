@@ -1,6 +1,6 @@
 import { Server } from "socket.io"
 import * as cookie from "cookie"
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 
 const onlineUser = new Map()
 
@@ -16,10 +16,11 @@ const StatusSocket = (io: Server) => {
         throw new Error("Access Token not found.")
       }
       
-      const user = jwt.verify(accessToken, process.env.AUTH_SECRET!)
+      const user = jwt.verify(accessToken, process.env.AUTH_SECRET!) as JwtPayload
 
       // Track online users
       onlineUser.set(socket.id, user)
+      socket.join(user.id)
 
       io.emit("online", Array.from(onlineUser.values()))
 
@@ -37,7 +38,6 @@ const StatusSocket = (io: Server) => {
     catch (error) {
       if(error instanceof Error) {
         socket.disconnect()
-        console.log(error.message);
       }
       
     }

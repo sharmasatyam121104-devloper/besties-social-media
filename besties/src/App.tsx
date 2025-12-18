@@ -40,7 +40,7 @@ const App = () => {
               <Route path="my-posts" element={<Post/>}/>
               <Route path="video-chat" element={<Video/>}/>
               <Route path="audio-chat" element={<Audio/>}/>
-              <Route path="chat" element={<Chat/>}/>
+              <Route path="chat/:id" element={<Chat/>}/>
               <Route path="suggestion" element={<Friendsuggestion/>}/>
               <Route path="accept-friend-request" element={<FriendRequest/>}/>
               <Route path="online-friends" element={<OnlineFriends/>}/>

@@ -220,11 +220,17 @@ const menu = isTabletOrMobile
           </div>
           <div>
             {session ? (
+              <div className="flex">
+              <div className=" px-2">
+                <h1 className="text-white capitalize">{session.fullname}</h1>
+                <p className="text-gray-300 ">{session.email}</p>
+              </div>
               <img
                 src={session.image || "/photos/images.jpeg"}
                 alt=""
-                className="w-10 h-10 rounded-full object-cover"
+                className="w-10 h-10 rounded-full object-cover mt-1"
               />
+              </div>
             ) : (
               <Avatar
                 title={session.fullname}

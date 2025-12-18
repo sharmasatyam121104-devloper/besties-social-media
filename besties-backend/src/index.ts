@@ -17,6 +17,7 @@ import FriendRouter from './routes/freind.router'
 import { Server } from 'socket.io'
 import StatusSocket from './socket/status.socket'
 import corsConfig from './util/cors'
+import ChatSocket from './socket/chat.soket'
 
 const app = express()
 const server = createServer(app)
@@ -28,6 +29,7 @@ server.listen(
 //Socket Connections
 const io = new Server(server, { cors: corsConfig})
 StatusSocket(io)
+ChatSocket(io)
 
 //Middleware
 app.use(cors(corsConfig))
