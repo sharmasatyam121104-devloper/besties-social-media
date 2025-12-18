@@ -18,6 +18,7 @@ import { Server } from 'socket.io'
 import StatusSocket from './socket/status.socket'
 import corsConfig from './util/cors'
 import ChatSocket from './socket/chat.soket'
+import ChatRouter from './routes/chat.router'
 
 const app = express()
 const server = createServer(app)
@@ -42,3 +43,4 @@ app.use("/api-docs", serve, setup(SwaggerConfig))
 app.use('/auth', AuthRouter)
 app.use('/storage',AuthMiddleware, StorageRouter)
 app.use('/friend', AuthMiddleware, FriendRouter)
+app.use('/chat',ChatRouter)

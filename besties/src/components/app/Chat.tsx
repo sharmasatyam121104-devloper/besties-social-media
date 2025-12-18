@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import socket from "../../lib/socket";
 import Avatar from "../shared/Avatar";
 import Button from "../shared/Button";
@@ -6,9 +6,12 @@ import Form from "../shared/Form";
 import Input from "../shared/Input";
 import Context from "../../Context";
 import { useParams } from "react-router-dom";
+import useSWR from "swr";
+import Fetcher from "../../lib/Fetcher";
 
 interface fromInfo {
   id: string;
+  _id: string;
   image: string | null;
   fullname: string;
   email: string;
@@ -22,12 +25,16 @@ interface ChatMessage {
 const Chat = () => {
   const [chats, setChats] = useState<ChatMessage[]>([]);
   const { session } = useContext(Context);
+  const chatContainer = useRef<HTMLDivElement | null>(null)
   const { id } = useParams();
+  const {data} = useSWR(id ? `/chat/${id}` : null, id ? Fetcher : null )
+   
 
   const messageHandler = (messageReceived: ChatMessage) => {
     setChats((prev) => [...prev, messageReceived]);
   };
 
+  //Listening received message
   useEffect(() => {
     socket.on("message", messageHandler);
 
@@ -35,6 +42,21 @@ const Chat = () => {
       socket.off("message", messageHandler);
     };
   }, []);
+
+  //Setting old chat
+  useEffect(()=>{
+    if(data){
+      setChats(data)
+    }
+  },[data])
+
+  //Setup scroll bar 
+  useEffect(()=>{
+     const chatDiv = chatContainer.current
+      if(chatDiv){
+        chatDiv.scrollTop = chatDiv.scrollHeight
+      }
+  },[chats])
 
   const sendMessage = (values: { message: string }) => {
     const payload: ChatMessage & { to: string | undefined } = {
@@ -49,10 +71,10 @@ const Chat = () => {
 
   return (
     <div>
-      <div className="h-[700px] md:h-[500px] overflow-y-auto space-y-8">
+      <div className="h-[700px] md:h-[500px] overflow-y-auto space-y-8" ref={chatContainer}>
         {chats.map((item, index) => (
           <div key={index} className="md:space-y-12 space-y-6 md:p-6 p-2">
-            {item.from?.id === session.id ? (
+            {(item.from?.id === session.id) || (item.from?._id === session.id) ? (
               <div className="flex gap-4 items-start">
                 <div className="relative bg-[#E8DEFF] py-2 px-2 rounded-xl flex-1 text-[#241A3A] shadow-lg wrap-break-words ">
                   <h1 className="font-bold capitalize">You</h1>
@@ -76,7 +98,7 @@ const Chat = () => {
       </div>
       <div className="p-3">
         <div className="flex items-center gap-4">
-          <Form onValue={sendMessage} className="flex gap-4 flex-1">
+          <Form onValue={sendMessage} reset className="flex gap-4 flex-1">
             <Input name="message" placeholder="Type your message here" />
             <Button type="secondary" icon="send-plane-fill">
               Send
