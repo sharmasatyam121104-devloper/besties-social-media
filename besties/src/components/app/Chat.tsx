@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState, type ChangeEvent, type FC } fr
 import socket from "../../lib/socket";
 import Avatar from "../shared/Avatar";
 import Button from "../shared/Button";
-import Form from "../shared/Form";
+import Form, { type FormDataType } from "../shared/Form";
 import Input from "../shared/Input";
 import Context from "../../Context";
 import { useParams } from "react-router-dom";
@@ -25,10 +25,11 @@ interface fromInfo {
 interface ChatMessage {
   from: fromInfo;
   message: string;
-  file: {
+  file?: {
     path: string;
     type: string;
-  }
+  },
+  createdAt?: string;
 }
 
 interface AttachmentInterface {
@@ -155,7 +156,9 @@ const Chat = () => {
   //Setting old chat
   useEffect(()=>{
     if(data){
-      setChats(data)
+      if (data) { 
+        Promise.resolve().then(() => setChats(data))
+      }
     }
   },[data])
 
@@ -168,6 +171,9 @@ const Chat = () => {
   },[chats])
 
   const sendMessage = (values: { message: string }) => {
+    if (!values.message.trim()) {
+       return;
+      }
     const payload: ChatMessage & { to: string | undefined } = {
       from: session,
       to: id,
@@ -184,6 +190,7 @@ const Chat = () => {
         return
       }
       const file = input.files[0]
+      const url = URL.createObjectURL(file)
       const ext = file.name.split(".").pop()
       const filename = `${uuid()}.${ext}`
       const path = `chats/${filename}`
@@ -197,9 +204,7 @@ const Chat = () => {
           'Content-Type': file.type
         }
       }
-      const {data} = await HttpInterceptor.post('/storage/upload', payload)
-      await HttpInterceptor.put(data.url, file, options)
-      socket.emit("attachment",{
+      const remoteMetaData = {
         from: session,
         to: id,
         message: filename,
@@ -207,7 +212,20 @@ const Chat = () => {
           path,
           type: file.type
         }
-      })
+      }
+      const localMetaData = {
+        from: session,
+        to: id,
+        message: filename,
+        file: {
+          path: url,
+          type: file.type
+        }
+      }
+      const {data} = await HttpInterceptor.post('/storage/upload', payload)
+      await HttpInterceptor.put(data.url, file, options)
+      setChats((prev) => [...prev, localMetaData]);
+      socket.emit("attachment", remoteMetaData)
       
     } 
     catch (error) {
@@ -215,9 +233,9 @@ const Chat = () => {
     }
   }
 
-  const download = async (path :string)=>{
+  const download = async (filename :string)=>{
     try {
-      const filename: any= path.split("/").pop()
+      const path = `chats/${filename}`
       const {data} = await HttpInterceptor.post("/storage/download",{path})
       const a = document.createElement("a")
       a.href = data.url
@@ -228,6 +246,11 @@ const Chat = () => {
       CatchError(error)  
     }
   }
+
+  const handleFormSubmit = (values: FormDataType) => { 
+    const message = values["message"]; 
+    if (!message?.trim()) return; sendMessage({ message });
+  };
 
 
   return (
@@ -255,7 +278,7 @@ const Chat = () => {
 
                 {item.file && (
                   <div className="mt-3 flex justify-start">
-                    <SmallButton onClick={()=>download(item.file.path)} type="primary" icon="download-2-line">Download</SmallButton>
+                    <SmallButton onClick={()=>download(item.message)} type="primary" icon="download-2-line">Download</SmallButton>
                   </div>
                 )}
                  <div className="text-gray-500 text-xs p-1 ">
@@ -286,11 +309,11 @@ const Chat = () => {
 
                 {item.file && (
                   <div className="mt-3 flex justify-start">
-                    <SmallButton onClick={()=>download(item.file.path)} type="success" icon="download-2-line">Download</SmallButton>
+                    <SmallButton onClick={()=>download(item.message)} type="success" icon="download-2-line">Download</SmallButton>
                   </div>
                 )}
                 <div className="text-gray-500 text-xs p-1 text-end">
-                  { moment().format('MMM DD, YYYY hh:mm:ss A')}
+                  {moment(item.createdAt).format('MMM DD, YYYY hh:mm:ss A')}
                 </div>
               </div>
             </div>
@@ -301,7 +324,7 @@ const Chat = () => {
       </div>
       <div className="p-3">
         <div className="flex items-center gap-4">
-          <Form onValue={sendMessage} reset className="flex gap-4 flex-1">
+          <Form onValue={handleFormSubmit} reset className="flex gap-4 flex-1">
             <Input name="message" placeholder="Type your message here" />
             <Button type="secondary" icon="send-plane-fill">
               Send

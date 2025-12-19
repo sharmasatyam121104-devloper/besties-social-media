@@ -2,6 +2,8 @@ import type { FC, FormEvent, ReactNode } from "react";
 
 export type FormDataType = Record<string, string>
 
+
+
 interface FormInterface {
   children: ReactNode
   className: string

@@ -50,7 +50,7 @@ const OnlineFriends = () => {
                   }
                 />
                 <div className="space-x-3">
-                  <Link to={`/app/chat/${item.id}`}>
+                  <Link to={`/app/chat/${item.id}`} >
                     <button className="hover:text-blue-600 text-blue-500 cursor-pointer" title="Chat">
                       <i className="ri-chat-ai-line"></i>
                     </button>

@@ -41,7 +41,7 @@ export const fetchChats =  async(req: SessionInterface, res: Response)=>{
                 {from: req.params.to, to :req.session.id },
             ]
         })
-        .populate("from","fullname email  mobile image")
+        .populate("from","fullname email  mobile image createdAt")
         .lean()
 
         const modifiedChat = await Promise.all(
@@ -52,7 +52,7 @@ export const fetchChats =  async(req: SessionInterface, res: Response)=>{
                         try {
                             filePath = await downlodObject(item.file.path);
                         } catch (err) {
-                            console.log("S3 file missing:", item.file.path);
+                           
                         }
 
                         return {

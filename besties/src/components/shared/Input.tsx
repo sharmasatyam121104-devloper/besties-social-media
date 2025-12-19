@@ -15,6 +15,7 @@ const Input: FC<InputInterface> = ({ key=0,name, placeholder, type="text"}) => {
         placeholder={placeholder}
         name={name}
         type={type}
+        required
     />
   )
 }
