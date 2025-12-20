@@ -8,7 +8,7 @@ AuthRouter.post("/signup",signup)
 AuthRouter.post('/login',login)
 AuthRouter.post('/logout',logout)
 AuthRouter.get('/refresh-token', RefreshToken, refreshToken)
-AuthRouter.get('/session', getSession)
+AuthRouter.get('/session',AuthMiddleware, getSession)
 AuthRouter.put('/profile-picture', AuthMiddleware, upadteProfile)
 
 

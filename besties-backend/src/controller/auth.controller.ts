@@ -9,7 +9,7 @@ import {v4 as uuid} from 'uuid'
 import moment from "moment"
 
 
-const accessTokenExpiry = "10m"   
+const accessTokenExpiry = "10m"  
 const tenMinutesInMs = ((10*60)*1000)
 const sevenDaysInMs = (7 * 24 * 60 * 60 * 1000)
  
@@ -78,28 +78,67 @@ export const login = async (req: Request, res: Response)=>{
     }
 }
 
-export const refreshToken = async (req: SessionInterface, res: Response)=>{
-    try {
+// export const refreshToken = async (req: SessionInterface, res: Response)=>{
+//     try {
 
-        if(!req.session){
-           throw tryError("Failed to refresh token",401)
-        }
+//         if(!req.session){
+//            throw tryError("Failed to refresh token",401)
+//         }
        
-       const {accessToken,refreshToken} = genrateToken(req.session)
-       await AuthModel.updateOne({_id: req.session.id},{$set: {
-        refreshToken,
-        expiry: moment().add(7,"days").toDate()
-       }})
+//        const {accessToken,refreshToken} = genrateToken(req.session)
+//        await AuthModel.updateOne({_id: req.session.id},{$set: {
+//         refreshToken,
+//         expiry: moment().add(7,"days").toDate()
+//        }})
 
-       res.cookie("accessToken", accessToken, getOptions('at'))
-        res.cookie("refreshToken", refreshToken, getOptions('rt'))
-        res.json({message: "Token refreshed"})
+//        res.cookie("accessToken", accessToken, getOptions('at'))
+//         res.cookie("refreshToken", refreshToken, getOptions('rt'))
+//         res.json({message: "Token refreshed"})
        
-    } 
-    catch (error) {
-        catchError(error,res, "Failed to refresh token.")
+//     } 
+//     catch (error) {
+//         catchError(error,res, "Failed to refresh token.")
+//     }
+// }
+
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken
+    if (!token) {
+      throw tryError("No refresh token", 401)
     }
+
+    // DB me refresh token check karo
+    const user = await AuthModel.findOne({ refreshToken: token })
+    if (!user) {
+      throw tryError("Invalid refresh token", 401)
+    }
+
+    // Naya access token banao
+    const payload = {
+      id: user._id,
+      fullname: user.fullname,
+      mobile: user.mobile,
+      email: user.email,
+      image: user.image,
+    }
+
+    const accessToken = jwt.sign(payload, process.env.AUTH_SECRET!, { expiresIn: accessTokenExpiry })
+    const newRefreshToken = uuid()
+
+    await AuthModel.updateOne(
+      { _id: user._id },
+      { $set: { refreshToken: newRefreshToken, expiry: moment().add(7, "days").toDate() } }
+    )
+
+    res.cookie("accessToken", accessToken, getOptions("at"))
+    res.cookie("refreshToken", newRefreshToken, getOptions("rt"))
+    res.json({ message: "Token refreshed" })
+  } catch (error) {
+    catchError(error, res, "Failed to refresh token.")
+  }
 }
+
 
 
 export const getSession = async(req: Request, res: Response)=>{

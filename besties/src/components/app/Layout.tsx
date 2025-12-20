@@ -83,13 +83,21 @@ const menu = isTabletOrMobile
     }
   }, [navigate])
 
-  useEffect(() => {
+useEffect(() => {
+  if (error) {
+    (async () => {
+      try {
+        // pehle session check kar
+        await HttpInterceptor.get("/auth/session")
+      } catch (err) {
+        // agar session bhi invalid hai tabhi logout kar
+        
+        handleLogout()
+      }
+    })()
+  }
+}, [error, handleLogout])
 
-    if (error) {
-      handleLogout()
-    }
-    
-  }, [error, handleLogout])
 
   const getPathname = (path: string)=>{
     return path.split('/').pop()?.split("-").join(' ')
