@@ -38,8 +38,8 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard/>}/>
               <Route path="friends" element={<Friends/>}/>
               <Route path="my-posts" element={<Post/>}/>
-              <Route path="video-chat" element={<Video/>}/>
-              <Route path="audio-chat" element={<Audio/>}/>
+              <Route path="video-chat/:id" element={<Video/>}/>
+              <Route path="audio-chat/:id" element={<Audio/>}/>
               <Route path="chat/:id" element={<Chat/>}/>
               <Route path="suggestion" element={<Friendsuggestion/>}/>
               <Route path="accept-friend-request" element={<FriendRequest/>}/>

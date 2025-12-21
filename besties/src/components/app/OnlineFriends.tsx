@@ -115,7 +115,7 @@ useEffect(() => {
                     <i className="ri-phone-line"></i>
                   </button>
                 </Link>
-                <Link to="/app/video-chat">
+                <Link to={`/app/video-chat/${item.id}`}>
                   <button
                     className="hover:text-amber-600 text-amber-500 cursor-pointer"
                     title="Video Call"
