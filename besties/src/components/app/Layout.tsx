@@ -91,7 +91,7 @@ useEffect(() => {
         await HttpInterceptor.get("/auth/session")
       } catch (err) {
         // agar session bhi invalid hai tabhi logout kar
-        
+        console.error("Session check failed:", err)
         handleLogout()
       }
     })()

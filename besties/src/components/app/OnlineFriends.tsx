@@ -19,30 +19,52 @@ export interface OnlineUserInterface {
   exp: number
 }
 
+interface FriendInfo {
+  _id: string
+  image: string | null
+  fullname: string
+  email: string
+}
+
+interface ItemInterface {
+  _id: string
+  user: FriendInfo
+  friend: FriendInfo
+  status: string
+  createdAt: string
+}
+
+
 const OnlineFriends = () => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUserInterface[]>([])
   const { session } = useContext(Context)
   const { data, error, isLoading } = useSWR("/friend/fetch-friend", Fetcher)
 
-  useEffect(() => {
-    const handler = (users: OnlineUserInterface[]) => setOnlineUsers(users)
-    socket.on("online", handler)
-    socket.emit("get-online")
+useEffect(() => {
+  const handler = (users: OnlineUserInterface[]) => setOnlineUsers(users)
 
-    return () => socket.off("online", handler)
-  }, [])
+  socket.on("online", handler)
+  socket.emit("get-online")
+
+  // Cleanup: remove listener
+  return () => {
+    socket.off("online", handler)
+  }
+}, [])
+
 
   if (isLoading) return <Skeleton active />
   if (error) return <Error message={error.message} />
 
   // Extract accepted friend IDs
   const friendIds = new Set(
-    data?.friends
-      ?.filter((item: any) => item.status === "accepted")
-      .map((item: any) =>
+    (data?.friends as ItemInterface[])
+      ?.filter((item) => item.status === "accepted")
+      .map((item) =>
         item.user._id === session?.id ? item.friend._id : item.user._id
       )
   )
+
 
   // Deduplicate online users by id
   const uniqueOnlineUsers = onlineUsers.filter(
