@@ -19,6 +19,8 @@ const EightMinInMs = 8*60*1000
 
 const Layout = () => {
 
+  // {1:19 remian}
+
   const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()

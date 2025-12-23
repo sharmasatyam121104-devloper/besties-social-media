@@ -4,8 +4,8 @@ import Button from "../shared/Button";
 import Context from "../../Context";
 import { toast } from "react-toastify";
 import socket from "../../lib/socket";
-import { useParams } from "react-router-dom";
-import { notification } from "antd";
+import {  useNavigate, useParams } from "react-router-dom";
+import { Modal, notification,} from "antd";
 
 const config = {
     iceServers: [
@@ -14,6 +14,8 @@ const config = {
 }
 
 type callType = "pending" | "calling" | "incoming" |"talking" | "end"
+
+type audioSrcType = "/audio/senderRing.mp3" | "/audio/callCutNotification.mp3" | "/audio/bussyRing.mp3"
 
 interface onOfferInterface {
     offer: RTCSessionDescriptionInit
@@ -46,6 +48,8 @@ function formatCallTime(seconds: number): string {
 
 
 const Video = () => {
+    const navigate =  useNavigate()
+    const [open, setOpne] = useState(false)
     const { session } = useContext(Context)
     const {id} = useParams()
     const [notify, notifyUi] = notification.useNotification()
@@ -64,6 +68,27 @@ const Video = () => {
     const [status, setStatus] = useState<callType>("pending")
     const [callTimer, setCallTimer] = useState(0)
 
+
+    const stopAudio = ()=>{
+        if(!audio.current) {
+            return
+        }
+
+        const palyer =  audio.current
+        palyer.pause()
+        palyer.currentTime = 0
+    }
+
+    const playAudio = (src: audioSrcType, loop: boolean = false)=>{
+        stopAudio()
+        if(!audio.current) {
+            audio.current = new Audio()
+        }
+        const palyer =  audio.current
+        palyer.src = src
+        palyer.loop = loop
+        palyer.play()
+    }
 
     const toggleScreen = async()=>{
         try {
@@ -266,16 +291,18 @@ const Video = () => {
            const offer = await rtc.createOffer()
            await rtc.setLocalDescription(offer)
            setStatus("calling")
+           playAudio("/audio/senderRing.mp3", true)
            notify.open({
             title: "Riya Kumari",
             description: "Calling...",
             duration: 30,
             placement: "bottomRight",
+            onClose: stopAudio,
             actions: [
                 <button 
                 key="end" 
                 className="bg-rose-400 px-3 py-2 rounded text-white hover:bg-rose-500"
-                onClick={endCall}
+                onClick={endCallFromLocal}
                 >
                     Reject Call
                 </button>
@@ -304,6 +331,7 @@ const Video = () => {
            await rtc.setLocalDescription(answer)
            notify.destroy()
            setStatus("talking")
+           stopAudio()
            socket.emit("answer", {answer, to:id})
         } 
         catch (error) {
@@ -312,20 +340,45 @@ const Video = () => {
     }
 
     //this is for who end and who rejected the call first
-    const endCall = ()=>{
+    const endCallFromLocal = ()=>{
          try {
            setStatus("end")
+           playAudio("/audio/callCutNotification.mp3")
+           notify.destroy()
            socket.emit("end", {to: id})
            setCallTimer(0)
+           endStreaming()
+           setOpne(true)
         } 
         catch (error) {
+        playAudio("/audio/callCutNotification.mp3")
            CatchError(error) 
         }
     }
 
+    const redirectOnCallEnd = ()=>{
+        setOpne(false)
+        navigate("/app")
+    }
+
+    const endStreaming = ()=>{
+        localStreamRef.current?.getTracks().forEach((track)=>track.stop())
+        if(localVideoRef.current) {
+            localVideoRef.current.srcObject = null
+        }
+
+        if(remoteVideoRef.current){
+            remoteVideoRef.current.srcObject = null
+        }
+    } 
+
     //to end call for remote controller
-    const onEnd = ()=>{
-        endCall()
+    const endCallFromRemote = ()=>{
+        setStatus("end")
+        playAudio("/audio/callCutNotification.mp3")
+        notify.destroy()
+        endStreaming()
+        setOpne(true)
     }
 
     
@@ -340,7 +393,7 @@ const Video = () => {
             actions: [
                 <div key="calls" className="space-x-4">
                     <button  className="bg-green-400 px-3 py-2 rounded text-white hover:bg-green-500" onClick={()=>accept(payload)}>Accept Call</button>
-                    <button  className="bg-rose-400 px-3 py-2 rounded text-white hover:bg-rose-500" onClick={endCall}>End Call</button>
+                    <button  className="bg-rose-400 px-3 py-2 rounded text-white hover:bg-rose-500" onClick={endCallFromLocal}>End Call</button>
                 </div>
             ]
         })
@@ -375,6 +428,7 @@ const Video = () => {
             const answer = new RTCSessionDescription(payload.answer)
             await rtc.setRemoteDescription(answer)
             setStatus("talking")
+            stopAudio()
             notify.destroy()
         } 
         catch (error) {
@@ -382,72 +436,34 @@ const Video = () => {
         }
     }
 
-    //Control Sound
-    useEffect(()=>{
-        let interval: any
-
-        if(status === "pending") {
-            return
-        }
-
-        if(!audio.current) {
-            clearInterval(interval)
-            audio.current = new Audio()
-        }
-
-        if(status === "calling" || status === "incoming") {
-            clearInterval(interval)
-            audio.current.pause()
-            audio.current.src = "/audio/senderRing.mp3"
-            audio.current.currentTime = 0
-            audio.current.load()
-            audio.current.play()
-        }
-
-        if(status === "end") {
-            clearInterval(interval)
-            audio.current.pause()
-            audio.current.src = "/audio/callCutNotification.mp3"
-            audio.current.currentTime = 0
-            audio.current.load()
-            audio.current.play()
-            notify.destroy()
-        }
-
-        if(status === "talking") {
-            clearInterval(interval)
-            audio.current.pause()
-            audio.current.currentTime = 0
-            interval = setInterval(()=>{
-                setCallTimer((prev)=>prev+1)
-            },1000)
-        }
-
-        return ()=>{
-            if(audio.current){
-               audio.current.pause()
-               audio.current.currentTime = 0 
-               audio.current = null
-            }
-            clearInterval(interval)
-        }
-
-    },[status])
-
 
     useEffect(()=>{
         socket.on("offer", onOffer)
         socket.on("candidate", onCandidate)
         socket.on("answer", OnAnswer)
-        socket.on("end", onEnd)
+        socket.on("end", endCallFromRemote)
 
         return ()=>{
             socket.off("offer", onOffer)
             socket.off("candidate",onCandidate)
              socket.off("answer", OnAnswer)
-             socket.on("end", onEnd)
+             socket.on("end", endCallFromRemote)
         }
     }, [])
+
+    useEffect(()=>{
+        let interval: any
+
+        if(status === "talking") {
+            interval = setInterval(()=>{
+                setCallTimer((prev)=>prev+1)
+            }, 1000)
+        }
+
+        return ()=>{
+            clearInterval(interval)
+        }
+    },[status])
 
   return (
     <div className="space-y-6 animate__animated ">
@@ -529,11 +545,56 @@ const Video = () => {
 
         {
             status === "talking" &&
-            <Button onClick={endCall} type="danger" icon="close-circle-fill">End</Button>
+            <Button onClick={endCallFromLocal} type="danger" icon="close-circle-fill">End</Button>
         }
        </div>
 
       </div>
+      <Modal
+        open={open}
+        footer={null}
+        centered
+        maskClosable={false}
+        width={420}
+        onCancel={redirectOnCallEnd}
+        >
+        <div className="flex flex-col items-center text-center gap-4 py-6">
+
+            {/* Call End Icon */}
+            <div className="w-20 h-20 flex items-center justify-center rounded-full bg-red-100">
+            <i className="ri-close-large-line text-4xl text-red-500"></i>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-2xl font-semibold text-gray-800">
+            Call Disconnected
+            </h1>
+
+            {/* Description */}
+            <p className="text-gray-500 text-sm max-w-xs">
+            The call has ended or the other user disconnected.
+            Please go back and try again.
+            </p>
+
+            {/* Divider */}
+            <div className="w-full h-px bg-gray-200 my-2"></div>
+
+            {/* Normal Button */}
+            <button
+                onClick={redirectOnCallEnd}
+                className="
+                w-full
+                flex items-center justify-center gap-2
+                bg-blue-600 hover:bg-blue-700
+                text-white font-medium
+                py-3 rounded-lg
+                transition
+                ">
+                Thank You!
+            </button>
+        </div>
+    </Modal>
+
       {notifyUi}
     </div>
   );
