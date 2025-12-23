@@ -64,6 +64,7 @@ const Video = () => {
 
     const [isVideoSharing, setIsVideoSharing] = useState(false)
     const [isScreenSharing, setIsScreenSharing] = useState(false)
+    const { liveActiveSession } = useContext(Context)
     const [isMic, setisMic] = useState(false)
     const [status, setStatus] = useState<callType>("pending")
     const [callTimer, setCallTimer] = useState(0)
@@ -278,7 +279,8 @@ const Video = () => {
     const startCall = async()=>{
         try {
             if(!isVideoSharing && !isScreenSharing) {
-                return toast.warning("Start your video first", {position: 'top-center'})
+                // return toast.warning("Start your video first", {position: 'top-center'})
+                await toggleVideo()
             }
 
             webRtcConnection()
@@ -293,7 +295,7 @@ const Video = () => {
            setStatus("calling")
            playAudio("/audio/senderRing.mp3", true)
            notify.open({
-            title: "Riya Kumari",
+            title: <h1 className="capitalize">{liveActiveSession.fullname}</h1>,
             description: "Calling...",
             duration: 30,
             placement: "bottomRight",
@@ -317,6 +319,7 @@ const Video = () => {
 
     const accept = async(payload: onOfferInterface)=>{
         try {
+             await toggleVideo()
            webRtcConnection() 
 
            const rtc = webRtcRef.current
@@ -358,7 +361,7 @@ const Video = () => {
 
     const redirectOnCallEnd = ()=>{
         setOpne(false)
-        navigate("/app")
+        navigate("/app/online-friends")
     }
 
     const endStreaming = ()=>{
@@ -386,7 +389,7 @@ const Video = () => {
     const onOffer = (payload: onOfferInterface)=>{
         setStatus("incoming")
         notify.open({
-            title: "satyam",
+            title: <h1 className="capitalize">{liveActiveSession.fullname}</h1>,
             description: "Incoming call",
             duration: 30,
             placement: "bottomRight",
@@ -450,6 +453,12 @@ const Video = () => {
              socket.on("end", endCallFromRemote)
         }
     }, [])
+
+    useEffect(()=>{
+        if(!liveActiveSession) {
+            endCallFromLocal()
+        }
+    })
 
     useEffect(()=>{
         let interval: any

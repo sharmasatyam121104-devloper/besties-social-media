@@ -1,5 +1,5 @@
 import Avatar from '../shared/Avatar';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Card from '../shared/Card';
 import { useContext, useEffect, useState } from 'react';
 import socket from '../../lib/socket';
@@ -37,8 +37,10 @@ interface ItemInterface {
 
 const OnlineFriends = () => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUserInterface[]>([])
-  const { session } = useContext(Context)
+  const { session,setLiveActiveSession } = useContext(Context)
+  const navigate = useNavigate()
   const { data, error, isLoading } = useSWR("/friend/fetch-friend", Fetcher)
+
 
 useEffect(() => {
   const handler = (users: OnlineUserInterface[]) => setOnlineUsers(users)
@@ -78,6 +80,11 @@ useEffect(() => {
       user.id !== session?.id && friendIds.has(user.id)
   )
 
+  const generateActiveSession = (url: string, user:OnlineUserInterface)=>{
+      setLiveActiveSession(user)
+      navigate(url)
+  }
+
   return (
     <div className="overflow-y-auto md:h-full h-189">
       <Card title="Online Friends" divider noPadding={false}>
@@ -98,31 +105,31 @@ useEffect(() => {
                   <small className="text-green-400 font-medium">Online</small>
                 }
               />
-              <div className="space-x-3">
-                <Link to={`/app/chat/${item.id}`}>
-                  <button
+              <div className="space-x-3 py-2">
+                <button  onClick={()=>generateActiveSession(`/app/chat/${item.id}`,item)}>
+                  <span
                     className="hover:text-blue-600 text-blue-500 cursor-pointer"
                     title="Chat"
                   >
-                    <i className="ri-chat-ai-line"></i>
-                  </button>
-                </Link>
-                <Link to="/app/audio-chat">
-                  <button
+                    <i className="ri-chat-ai-line text-2xl"></i>
+                  </span>
+                </button>
+                <button  onClick={()=>generateActiveSession(`/app/audio-chat/${item.id}`,item)}>
+                  <span
                     className="hover:text-green-500 text-green-400 cursor-pointer"
                     title="Call"
                   >
-                    <i className="ri-phone-line"></i>
-                  </button>
-                </Link>
-                <Link to={`/app/video-chat/${item.id}`}>
-                  <button
+                    <i className="ri-phone-line text-2xl"></i>
+                  </span>
+                </button>
+                <button onClick={()=>generateActiveSession(`/app/video-chat/${item.id}`,item)}>
+                  <span
                     className="hover:text-amber-600 text-amber-500 cursor-pointer"
                     title="Video Call"
                   >
-                    <i className="ri-video-on-line"></i>
-                  </button>
-                </Link>
+                    <i className="ri-video-on-line text-2xl "></i>
+                  </span>
+                </button>
               </div>
             </div>
           ))}

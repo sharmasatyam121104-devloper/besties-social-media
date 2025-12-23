@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate, useParams } from "react-router-dom"
 import Avatar from "../shared/Avatar"
 import Card from "../shared/Card"
 import { useCallback, useContext, useEffect, useState } from "react"
@@ -13,9 +13,49 @@ import Friendsuggestion from "./Friendsuggestion"
 import FriendRequest from "./FriendRequest"
 import { useMediaQuery } from "react-responsive"
 import Logo from "../shared/Logo"
-import OnlineFriends from "./OnlineFriends"
+import OnlineFriends, { type OnlineUserInterface } from "./OnlineFriends"
 
 const EightMinInMs = 8*60*1000
+
+
+
+ const ActivesessionUi = ({ liveActiveSession }: { liveActiveSession: OnlineUserInterface }) => {
+   const navigate = useNavigate()
+
+    useEffect(() => {
+      if (!liveActiveSession) {
+        navigate("/app/online-friends")
+      }
+    }, [liveActiveSession, navigate]);
+
+    if (!liveActiveSession) {
+      return null; 
+    }
+
+    return (
+      <div className="w-full max-w-md bg-white rounded-xl p-2 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition">
+        
+        {/* Avatar */}
+        <img
+          src={ liveActiveSession.image || "/photos/blank_profile.jpeg" }
+          alt="user"
+          className="w-14 h-14 rounded-full object-cover"
+        />
+
+        {/* User Info */}
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900">
+            { liveActiveSession.fullname}
+          </h3>
+          <span className="text-sm text-green-600 font-medium">
+              Online
+            </span>
+        </div>
+
+      </div>
+    );
+
+    };
 
 const Layout = () => {
 
@@ -25,9 +65,10 @@ const Layout = () => {
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { session, setSession } = useContext(Context)
+  const { session, setSession,liveActiveSession } = useContext(Context)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
-
+  const params = useParams()
+  const paramsArray = Object.keys(params)
 
   const { error} = useSWR('/auth/refresh-token', Fetcher, {
     refreshInterval: EightMinInMs, shouldRetryOnError: false
@@ -148,10 +189,12 @@ useEffect(() => {
     }
   }
 
+ 
+
+    
 
   return (
     <>
-
     {
       isTabletOrMobile && 
       <div className="h-screen flex flex-col">
@@ -256,7 +299,7 @@ useEffect(() => {
 
         {/* Pathname heading sticky under navbar */}
         <div className="sticky top-16  z-40 px-4 py-2">
-          <h1 className="text-gray-700 text-xl font-bold capitalize">{getPathname(pathname)}</h1>
+          <h1 className="text-gray-700 text-xl font-bold capitalize">{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession}/>}</h1>
         </div>
 
         {/* Scrollable content */}
@@ -336,7 +379,7 @@ useEffect(() => {
              >
               <i className="ri-arrow-left-line"></i>
             </button>
-            <h1>{getPathname(pathname)}</h1>
+            <h1>{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession}/>}</h1>
           </div>
          }
          divider
