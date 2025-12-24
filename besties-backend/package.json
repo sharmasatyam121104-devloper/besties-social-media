@@ -37,6 +37,7 @@
     "nodemon": "^3.1.11",
     "socket.io": "^4.8.1",
     "swagger-ui-express": "^5.0.1",
+    "twilio": "^5.11.1",
     "uuid": "^13.0.0"
   }
 }

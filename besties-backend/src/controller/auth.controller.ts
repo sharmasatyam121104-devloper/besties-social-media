@@ -27,7 +27,8 @@ const getOptions = (tokenType: "at" | "rt")=>{
             httpOnly: true,
             maxAge: tokenType === "at" ? tenMinutesInMs : sevenDaysInMs,
             secure: false,
-            domain: 'localhost'
+            samesite: 'none',
+            domain: process.env.NODE_ENv === "dev" ? "localhost" : process.env.CLIENT!.split("//").pop()
         }
 }
 

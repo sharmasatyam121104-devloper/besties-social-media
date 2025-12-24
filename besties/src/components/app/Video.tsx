@@ -6,18 +6,19 @@ import { toast } from "react-toastify";
 import socket from "../../lib/socket";
 import {  useNavigate, useParams } from "react-router-dom";
 import { Modal, notification,} from "antd";
+import HttpInterceptor from "../../lib/HttpInterceptor";
 
-const config = {
-    iceServers: [
-        {urls: "stun:stun.l.google.com:19302" }
-    ]
-}
+// const config = {
+//     iceServers: [
+//         {urls: "stun:stun.l.google.com:19302" }
+//     ]
+// }
 
 type callType = "pending" | "calling" | "incoming" |"talking" | "end"
 
 type audioSrcType = "/audio/senderRing.mp3" | "/audio/callCutNotification.mp3" | "/audio/bussyRing.mp3"
 
-interface onOfferInterface {
+export interface onOfferInterface {
     offer: RTCSessionDescriptionInit
     from: string
 }
@@ -50,7 +51,7 @@ function formatCallTime(seconds: number): string {
 const Video = () => {
     const navigate =  useNavigate()
     const [open, setOpne] = useState(false)
-    const { session } = useContext(Context)
+    const { session, sdp, setSdp } = useContext(Context)
     const {id} = useParams()
     const [notify, notifyUi] = notification.useNotification()
 
@@ -103,11 +104,32 @@ const Video = () => {
             if(!isScreenSharing) {
 
                 const stream = await navigator.mediaDevices.getDisplayMedia({video: true})
+                const screenShareTrack = stream.getVideoTracks()[0]
+                const senderVideoTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
                 
-    
+                if(screenShareTrack && senderVideoTrack){
+                    await senderVideoTrack.replaceTrack(screenShareTrack)
+                }
+
                 localVideo.srcObject = stream
                 localStreamRef.current = stream
                 setIsScreenSharing(true)
+
+                // Detect screenshring off
+                screenShareTrack.onended = async ()=>{
+                    setIsScreenSharing(false)
+                    const videoCamStream = await navigator.mediaDevices.getUserMedia({video: true})
+                    const videoTrack = videoCamStream.getTracks()[0]
+                    const senderTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
+
+                    if(videoTrack && senderTrack) {
+                        await senderTrack.replaceTrack(videoTrack)
+                    }
+
+                    localVideo.srcObject = videoCamStream
+                    localStreamRef.current = videoCamStream
+                    setIsScreenSharing(true)
+                }
             }
             else {
                 const localStream = localStreamRef.current
@@ -212,8 +234,9 @@ const Video = () => {
         }
     }
 
-    const webRtcConnection = ()=>{
-        webRtcRef.current =  new RTCPeerConnection(config)
+    const webRtcConnection = async ()=>{
+        const {data} = await HttpInterceptor.get('/twilio/turn-server')
+        webRtcRef.current =  new RTCPeerConnection({iceServers: data})
 
         
         const localStream = localStreamRef.current
@@ -283,7 +306,7 @@ const Video = () => {
                 await toggleVideo()
             }
 
-            webRtcConnection()
+            await webRtcConnection()
             
            const rtc = webRtcRef.current
            if(!rtc){
@@ -319,6 +342,7 @@ const Video = () => {
 
     const accept = async(payload: onOfferInterface)=>{
         try {
+            setSdp(null)
              await toggleVideo()
            webRtcConnection() 
 
@@ -449,8 +473,8 @@ const Video = () => {
         return ()=>{
             socket.off("offer", onOffer)
             socket.off("candidate",onCandidate)
-             socket.off("answer", OnAnswer)
-             socket.on("end", endCallFromRemote)
+            socket.off("answer", OnAnswer)
+            socket.off("end", endCallFromRemote)
         }
     }, [])
 
@@ -458,10 +482,10 @@ const Video = () => {
         if(!liveActiveSession) {
             endCallFromLocal()
         }
-    })
+    },[liveActiveSession])
 
     useEffect(()=>{
-        let interval: any
+        let interval: number | undefined
 
         if(status === "talking") {
             interval = setInterval(()=>{
@@ -474,21 +498,33 @@ const Video = () => {
         }
     },[status])
 
+    //Detect comming offer
+    useEffect(() => {
+    if (sdp) {
+        notify.destroy();
+        // Defer state update to avoid cascading renders
+        setTimeout(() => {
+        onOffer(sdp);
+        }, 0);
+    }
+    }, []);
+
+
   return (
     <div className="space-y-6 animate__animated ">
       <div ref={remoteVideoContainerRef} className="bg-black w-full h-0 relative pb-[56.25%] rounded-xl">
-        <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full absolute top-0 left-0">
-        </video>
-        <button className="absolute bottom-5 left-5 text-xs px-2.5 py-1 rounded-lg text-white" style={{
-            background: 'rgba(255,255,255,0.1)'
-        }}>
-            Satyam Sharma
-        </button>
-        <button onClick={()=>toggleFullScreen("remote")} className="absolute bottom-5 right-5 text-xs px-2.5 py-1 rounded-lg text-white hover:bg-white hover:scale-125" style={{
-            background: 'rgba(255,255,255,0.1)'
-        }}>
-            <i className="ri-fullscreen-line"></i>
-        </button>
+            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full absolute top-0 left-0">
+            </video>
+            <button className="absolute bottom-5 left-5 text-xs px-2.5 py-1 rounded-lg text-white" style={{
+                background: 'rgba(255,255,255,0.1)'
+                }}>
+                Satyam Sharma
+            </button>
+            <button onClick={()=>toggleFullScreen("remote")} className="absolute bottom-5 right-5 text-xs px-2.5 py-1 rounded-lg text-white hover:bg-white hover:scale-125" style={{
+                background: 'rgba(255,255,255,0.1)'
+                }}>
+                <i className="ri-fullscreen-line"></i>
+            </button>
       </div>
 
         <div className="grid md:grid-cols-3 grid-cols-2 gap-4">
@@ -497,15 +533,15 @@ const Video = () => {
                 </video>
                 <button className="absolute bottom-2 left-2 text-xs px-2.5 py-1 rounded-lg text-white capitalize" style={{
                     background: 'rgba(255,255,255,0.1)'
-                }}>
+                    }}>
                     { session && session.fullname}
                 </button>
                 <button onClick={()=>toggleFullScreen("local")} className="absolute bottom-2 right-2 text-xs px-2.5 py-1 rounded-lg text-white hover:bg-white hover:scale-125" style={{
                     background: 'rgba(255,255,255,0.1)'
-                }}>
+                    }}>
                     <i className="ri-fullscreen-line"></i>
                 </button>
-            </div>
+           </div>
             <Button icon="user-add-line">
                 Add
             </Button>
@@ -602,9 +638,8 @@ const Video = () => {
                 Thank You!
             </button>
         </div>
-    </Modal>
-
-      {notifyUi}
+        </Modal>
+        {notifyUi}
     </div>
   );
 }

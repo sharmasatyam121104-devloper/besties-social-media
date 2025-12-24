@@ -20,6 +20,7 @@ import corsConfig from './util/cors'
 import ChatSocket from './socket/chat.soket'
 import ChatRouter from './routes/chat.router'
 import VideoSocket from './socket/video.socket'
+import TwilioRouter from './routes/twilio.router'
 
 const app = express()
 const server = createServer(app)
@@ -46,3 +47,4 @@ app.use('/auth', AuthRouter)
 app.use('/storage',AuthMiddleware, StorageRouter)
 app.use('/friend', AuthMiddleware, FriendRouter)
 app.use('/chat',ChatRouter)
+app.use('/twilio', TwilioRouter)

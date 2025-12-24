@@ -14,6 +14,8 @@ import FriendRequest from "./FriendRequest"
 import { useMediaQuery } from "react-responsive"
 import Logo from "../shared/Logo"
 import OnlineFriends, { type OnlineUserInterface } from "./OnlineFriends"
+import socket from "../../lib/socket"
+import type { onOfferInterface } from "./Video"
 
 const EightMinInMs = 8*60*1000
 
@@ -59,13 +61,11 @@ const EightMinInMs = 8*60*1000
 
 const Layout = () => {
 
-  // {1:19 remian}
-
   const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { session, setSession,liveActiveSession } = useContext(Context)
+  const { session, setSession,liveActiveSession, setLiveActiveSession,setSdp } = useContext(Context)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const params = useParams()
   const paramsArray = Object.keys(params)
@@ -95,29 +95,29 @@ const Layout = () => {
   ]
 
   const mobileMenu = [
-  {
-    herf: "/app/online-friends",
-    icon: "ri-user-star-line ",
-    label: "Online Friends",
-  },
-  {
-    herf: "/app/suggestion",
-    icon: "ri-function-add-line",
-    label: "Add new friend",
-  },
-  {
-    herf: "/app/accept-friend-request",
-    icon: "ri-user-add-line",
-    label: "Friend Requests",
-  },
-]
+    {
+      herf: "/app/online-friends",
+      icon: "ri-user-star-line ",
+      label: "Online Friends",
+    },
+    {
+      herf: "/app/suggestion",
+      icon: "ri-function-add-line",
+      label: "Add new friend",
+    },
+    {
+      herf: "/app/accept-friend-request",
+      icon: "ri-user-add-line",
+      label: "Friend Requests",
+    },
+  ]
 
-const menu = isTabletOrMobile
+  const menu = isTabletOrMobile
   ? [...baseMenu, ...mobileMenu]
   : baseMenu
 
 
- const handleLogout = useCallback(async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await HttpInterceptor.post("/auth/logout")
       navigate("/login")
@@ -126,20 +126,20 @@ const menu = isTabletOrMobile
     }
   }, [navigate])
 
-useEffect(() => {
-  if (error) {
-    (async () => {
-      try {
-        // pehle session check kar
-        await HttpInterceptor.get("/auth/session")
-      } catch (err) {
-        // agar session bhi invalid hai tabhi logout kar
-        console.error("Session check failed:", err)
-        handleLogout()
-      }
-    })()
-  }
-}, [error, handleLogout])
+  useEffect(() => {
+    if (error) {
+      (async () => {
+        try {
+          // pehle session check kar
+          await HttpInterceptor.get("/auth/session")
+        } catch (err) {
+          // agar session bhi invalid hai tabhi logout kar
+          console.error("Session check failed:", err)
+          handleLogout()
+        }
+      })()
+    }
+  }, [error, handleLogout])
 
 
   const getPathname = (path: string)=>{
@@ -147,8 +147,11 @@ useEffect(() => {
   }
 
   const handleLeftAsideSize = ()=>{
+
     if(leftAsideSize === 350) setLeftAsideSize(137)
-      if(leftAsideSize !== 350) setLeftAsideSize(350)
+
+    if(leftAsideSize !== 350) setLeftAsideSize(350)
+
   }
 
   const uploadImage = ()=>{
@@ -189,7 +192,20 @@ useEffect(() => {
     }
   }
 
- 
+  const onOffer = useCallback((payload: onOfferInterface) => {
+    setSdp(payload);
+    setLiveActiveSession(payload.from);
+    navigate(`/app/video-chat/${payload.from}`);
+  }, [setSdp, setLiveActiveSession, navigate]);
+
+
+  useEffect(()=>{
+    socket.on("offer", onOffer)
+
+    return ()=>{
+      socket.on("offer", onOffer)
+    }
+  }, [onOffer])
 
     
 
@@ -244,7 +260,7 @@ useEffect(() => {
                     to={item.herf}
                     onClick={() => setIsMobileSidebarOpen(false)}
                     className="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-200 hover:bg-white/10"
-                  >
+                    >
                     <i className={`${item.icon} text-2xl`} />
                     <span className="text-xl capitalize">{item.label}</span>
                   </Link>
@@ -254,7 +270,7 @@ useEffect(() => {
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-3 px-3 py-3 rounded-lg text-red-400 hover:bg-white/10 w-full text-xl"
-                >
+                  >
                   <i className="ri-logout-circle-r-line text-2xl" />
                   Logout
                 </button>
@@ -395,10 +411,10 @@ useEffect(() => {
 
       <aside className="bg-white w-[450px] fixed top-0 right-1 h-full p-8 overflow-auto space-y-8">
         <div className="h-[258px] overflow-y-hidden shadow-lg">
-            <Friendsuggestion />
+          <Friendsuggestion />
         </div>
         <div className="h-[258px] overflow-y-hidden shadow-lg mb-8 rounded-b-xl">
-            <FriendRequest/>
+          <FriendRequest/>
         </div>
         <div className="">
           <OnlineFriends/>
