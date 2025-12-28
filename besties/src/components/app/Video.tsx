@@ -14,21 +14,32 @@ import HttpInterceptor from "../../lib/HttpInterceptor";
 //     ]
 // }
 
-type callType = "pending" | "calling" | "incoming" |"talking" | "end"
+export type callType = "pending" | "calling" | "incoming" |"talking" | "end"
 
-type audioSrcType = "/audio/senderRing.mp3" | "/audio/callCutNotification.mp3" | "/audio/bussyRing.mp3"
+export type audioSrcType = "/audio/senderRing.mp3" | "/audio/callCutNotification.mp3" | "/audio/bussyRing.mp3"
+
+interface fromInterface {
+  id: string;
+  fullname: string;
+  email: string;
+  mobile: string;
+  image: string;
+  socketId: string;
+}
+
 
 export interface onOfferInterface {
     offer: RTCSessionDescriptionInit
-    from: string
+    from: fromInterface,
+    type: "video" | "audio" 
 }
 
-interface onAnswerInterface {
+export interface onAnswerInterface {
     answer: RTCSessionDescriptionInit
     from: string
 }
 
-interface onCandidateInterface {
+export interface onCandidateInterface {
     candidate: RTCIceCandidateInit,
     from: string
 }
@@ -333,7 +344,7 @@ const Video = () => {
                 </button>
             ]
            })
-           socket.emit("offer", {offer, to:id})
+           socket.emit("offer", {offer, to:id, type: 'video', from:session})
         } 
         catch (error) {
            CatchError(error) 
@@ -343,8 +354,8 @@ const Video = () => {
     const accept = async(payload: onOfferInterface)=>{
         try {
             setSdp(null)
-             await toggleVideo()
-           webRtcConnection() 
+            await toggleVideo()
+            await webRtcConnection() 
 
            const rtc = webRtcRef.current
            if(!rtc){
@@ -360,6 +371,7 @@ const Video = () => {
            setStatus("talking")
            stopAudio()
            socket.emit("answer", {answer, to:id})
+           console.log("oof",answer);
         } 
         catch (error) {
             CatchError(error)
@@ -397,6 +409,12 @@ const Video = () => {
         if(remoteVideoRef.current){
             remoteVideoRef.current.srcObject = null
         }
+
+        if(webRtcRef.current){ 
+            webRtcRef.current.close(); 
+            webRtcRef.current = null
+        }
+        
     } 
 
     //to end call for remote controller
@@ -404,8 +422,10 @@ const Video = () => {
         setStatus("end")
         playAudio("/audio/callCutNotification.mp3")
         notify.destroy()
+        setCallTimer(0)
         endStreaming()
         setOpne(true)
+        
     }
 
     
@@ -413,7 +433,7 @@ const Video = () => {
     const onOffer = (payload: onOfferInterface)=>{
         setStatus("incoming")
         notify.open({
-            title: <h1 className="capitalize">{liveActiveSession.fullname}</h1>,
+            title: <h1 className="capitalize">{payload.from.fullname}</h1>,
             description: "Incoming call",
             duration: 30,
             placement: "bottomRight",
@@ -445,6 +465,7 @@ const Video = () => {
     }
 
     const OnAnswer = async(payload: onAnswerInterface)=>{
+        console.log("eee",payload);
         try {
             const rtc = webRtcRef.current
 
@@ -501,7 +522,8 @@ const Video = () => {
     //Detect comming offer
     useEffect(() => {
     if (sdp) {
-        notify.destroy();
+        console.log(sdp);
+        notify.destroy()
         // Defer state update to avoid cascading renders
         setTimeout(() => {
         onOffer(sdp);
@@ -529,7 +551,7 @@ const Video = () => {
 
         <div className="grid md:grid-cols-3 grid-cols-2 gap-4">
            <div ref={localVideoContainerRef} className="bg-black w-full h-0  relative pb-[56.25%] rounded-xl">
-                <video ref={localVideoRef} autoPlay playsInline className="w-full h-full absolute top-0 left-0">
+                <video ref={localVideoRef} muted autoPlay playsInline className="w-full h-full absolute top-0 left-0">
                 </video>
                 <button className="absolute bottom-2 left-2 text-xs px-2.5 py-1 rounded-lg text-white capitalize" style={{
                     background: 'rgba(255,255,255,0.1)'

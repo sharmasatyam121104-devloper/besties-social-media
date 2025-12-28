@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate, useParams } from "react-router-dom"
 import Avatar from "../shared/Avatar"
 import Card from "../shared/Card"
-import { useCallback, useContext, useEffect, useState } from "react"
+import { useCallback, useContext, useEffect, useRef, useState } from "react"
 import Dashboard from "./Dashboard"
 import Context from "../../Context"
 import HttpInterceptor from "../../lib/HttpInterceptor"
@@ -69,6 +69,7 @@ const Layout = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const params = useParams()
   const paramsArray = Object.keys(params)
+  
 
   const { error} = useSWR('/auth/refresh-token', Fetcher, {
     refreshInterval: EightMinInMs, shouldRetryOnError: false
@@ -195,17 +196,25 @@ const Layout = () => {
   const onOffer = useCallback((payload: onOfferInterface) => {
     setSdp(payload);
     setLiveActiveSession(payload.from);
-    navigate(`/app/video-chat/${payload.from}`);
+    if(payload.type === "video") {
+     navigate(`/app/video-chat/${payload.from.socketId}`);
+    }
+
+    if(payload.type === "audio") {
+     navigate(`/app/audio-chat/${payload.from.socketId}`);
+    }
   }, [setSdp, setLiveActiveSession, navigate]);
 
 
-  useEffect(()=>{
-    socket.on("offer", onOffer)
 
-    return ()=>{
-      socket.on("offer", onOffer)
-    }
-  }, [onOffer])
+  useEffect(() => {
+
+    socket.on("offer", onOffer);
+
+    return () => {
+      socket.off("offer", onOffer);
+    };
+  }, [onOffer]);
 
     
 
