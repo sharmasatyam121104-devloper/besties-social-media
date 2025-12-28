@@ -14,6 +14,25 @@ import HttpInterceptor from "../../lib/HttpInterceptor"
 import Fetcher from "../../lib/Fetcher"
 import CatchError from "../../lib/CatchError"
 
+export interface UserInterface {
+  _id: string;
+  fullname: string;
+  email: string;
+  image: string | null;
+}
+
+export interface PostItemInterface {
+  _id: string;
+  user: UserInterface;
+  content: string;          // HTML string
+  attachment?: string | null      // S3 path
+  type: string;            // image/jpeg, video/mp4 etc
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+
 const MyPost = () => {
   // Fetch only my posts
   const { data, error, isLoading } = useSWR("/post/my-post", Fetcher)
@@ -21,13 +40,10 @@ const MyPost = () => {
   // Loader state for delete button
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  /**
-   * Delete a post by ID
-   */
+  //Delete post by id
   const deletePost = async (postId: string) => {
     try {
       setDeletingId(postId)
-      console.log(postId);
       await HttpInterceptor.delete(`/post/delete-post/${postId}`)
       message.success("Post deleted successfully")
       mutate("/post/my-post") // Refresh post list
@@ -46,8 +62,13 @@ const MyPost = () => {
         <Empty description="You have not created any posts yet."/>
       )}
 
+      {error &&  (
+        <Empty description="Please try  Sometimes latters "/>
+      )}
+
+
       {data &&
-        data.map((item: any) => (
+        data.map((item: PostItemInterface) => (
           <Card key={item._id}>
             <div className="space-y-4">
               {/* Post Media */}
@@ -90,7 +111,7 @@ const MyPost = () => {
                 </div>
 
                 <img
-                  src={item.user.image}
+                  src={ item?.user?.image ?? "/images/placeholder.jpg"}
                   alt="user"
                   className="w-14 h-14 rounded-full object-cover"
                 />

@@ -15,9 +15,33 @@ import { useMediaQuery } from "react-responsive"
 import Logo from "../shared/Logo"
 import OnlineFriends, { type OnlineUserInterface } from "./OnlineFriends"
 import socket from "../../lib/socket"
-import type { onOfferInterface } from "./Video"
+import type { audioSrcType, onOfferInterface } from "./Video"
+import { notification } from "antd"
 
 const EightMinInMs = 8*60*1000
+
+export interface ChatFile {
+  path: string;
+  type: string;
+}
+
+export interface ChatUser {
+  id: string;
+  fullname: string;
+  email: string;
+  mobile: string;
+  image: string | null;
+}
+
+
+export interface ChatMessage {
+  from: ChatUser;
+  message: string;
+  file?: ChatFile | null;
+}
+
+
+
 
 
 
@@ -69,11 +93,34 @@ const Layout = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const params = useParams()
   const paramsArray = Object.keys(params)
+  const audio  = useRef<HTMLAudioElement | null>(null)
+  const [notify, notifyUi] = notification.useNotification()
   
 
   const { error} = useSWR('/auth/refresh-token', Fetcher, {
     refreshInterval: EightMinInMs, shouldRetryOnError: false
   })
+
+  const stopAudio = ()=>{
+          if(!audio.current) {
+              return
+          }
+  
+          const palyer =  audio.current
+          palyer.pause()
+          palyer.currentTime = 0
+      }
+  
+      const playAudio = (src: audioSrcType, loop: boolean = false)=>{
+          stopAudio()
+          if(!audio.current) {
+              audio.current = new Audio()
+          }
+          const palyer =  audio.current
+          palyer.src = src
+          palyer.loop = loop
+          palyer.play()
+      }
 
   
   const baseMenu = [
@@ -180,14 +227,13 @@ const Layout = () => {
         }
         const { data } = await HttpInterceptor.post("/storage/upload", payLoad)
         await HttpInterceptor.put(data.url, file , options)
-        console.log("success");
         const {data: user} = await HttpInterceptor.put('/auth/profile-picture', {path})
         setSession({...session, image: user.image})
         mutate('/auth/refresh-token')
         
       } 
       catch (error) {
-        console.log(error);
+        CatchError(error)
       }
      
     }
@@ -205,14 +251,39 @@ const Layout = () => {
     }
   }, [setSdp, setLiveActiveSession, navigate]);
 
+  const startChat = (payLoad: ChatMessage)=>{
+    console.log(payLoad);
+    notify.destroy()
+    setLiveActiveSession(payLoad.from)
+    navigate(`/app/chat/${payLoad.from.id}`)
+  }
+
+  const onMessage = (payLoad:ChatMessage)=>{
+    if(location.href.includes(`/app/chat/${payLoad.from.id}`)) {
+      return
+    }
+    playAudio("/audio/notification_tone.mp3")
+    notify.open({
+      title: <h1 className="font-medium capitalize">{payLoad.from.fullname}</h1>,
+      description: payLoad.message,
+      placement: "bottomRight",
+      duration: 30,
+      actions: [
+        <button key="chat" className="bg-green-400 px-3 py-2 rounded text-white hover:bg-green-500" onClick={()=>startChat(payLoad)}>Accept Call</button>
+      ]
+    })
+
+  }
 
 
   useEffect(() => {
 
     socket.on("offer", onOffer);
+    socket.on("message", onMessage);
 
     return () => {
       socket.off("offer", onOffer);
+      socket.off("message", onMessage);
     };
   }, [onOffer]);
 
@@ -432,6 +503,7 @@ const Layout = () => {
       
       </div>
     }
+    {notifyUi}
     </>
   )
 }

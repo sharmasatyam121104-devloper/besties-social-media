@@ -9,7 +9,7 @@ import CatchError from "../../lib/CatchError"
 import { toast } from "react-toastify"
 import { useContext, useEffect, useState } from "react"
 import Context from "../../Context"
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import socket from "../../lib/socket"
 
 
@@ -33,8 +33,9 @@ interface OnlineUser { id: string }
 
 const Friends = () => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
-  const { session } = useContext(Context)
+  const { session,setLiveActiveSession } = useContext(Context)
   const currentUserId = session?.email // yahan session ya context se current user id aayega
+  const navigate = useNavigate()
 
   useEffect(()=>{
     socket.on("online",(users: OnlineUser[])=>{
@@ -55,14 +56,19 @@ const Friends = () => {
 
   const handleUnfriend = async (id: string) => {
     try {
-      const { data } = await HttpInterceptor.post("/friend/delete-friend", { friendId: id })
-      console.log(data)
+      await HttpInterceptor.post("/friend/delete-friend", { friendId: id })
       toast.success("Unfriend request success !")
       mutate("/friend/fetch-friend")
     } catch (error) {
       CatchError(error)
     }
   }
+
+  const generateActiveSession = (url: string, user:FriendInfo)=>{
+        setLiveActiveSession(user)
+        navigate(url)
+    }
+
   return (
     <div className="md:h-[575px]  overflow-y-auto">
       
@@ -124,28 +130,25 @@ const Friends = () => {
                         <div className="flex items-center gap-3 mt-2">
 
                           {/* CHAT */}
-                          <Link
-                            to={`/app/chat/${friend._id}`}
+                          <button  onClick={()=>generateActiveSession(`/app/chat/${item._id}`,item.user)}
                             className="text-blue-500 hover:text-blue-600 text-xl cursor-pointer"
                             >
                             <i className="ri-chat-1-line"></i>
-                          </Link>
+                          </button>
 
                           {/* AUDIO CALL */}
-                          <Link
-                            to={`/app/audio-chat`}
+                          <button  onClick={()=>generateActiveSession(`/app/audio-chat/${item._id}`,item.user)}
                             className="text-green-500 hover:text-green-600 text-xl cursor-pointer"
                             >
                             <i className="ri-phone-line"></i>
-                          </Link>
+                          </button>
 
                           {/* VIDEO CALL */}
-                          <Link
-                            to={`/aap/video-chat`}
+                          <button onClick={()=>generateActiveSession(`/app/video-chat/${item._id}`,item.user)}
                             className="text-purple-500 hover:text-purple-600 text-xl cursor-pointer"
                             >
                             <i className="ri-video-chat-line"></i>
-                          </Link>
+                          </button>
                         </div>
 
                         <button

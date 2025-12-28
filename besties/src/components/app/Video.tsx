@@ -16,7 +16,7 @@ import HttpInterceptor from "../../lib/HttpInterceptor";
 
 export type callType = "pending" | "calling" | "incoming" |"talking" | "end"
 
-export type audioSrcType = "/audio/senderRing.mp3" | "/audio/callCutNotification.mp3" | "/audio/bussyRing.mp3"
+export type audioSrcType = "/audio/senderRing.mp3" | "/audio/callCutNotification.mp3" | "/audio/bussyRing.mp3" | "/audio/notification_tone.mp3"
 
 interface fromInterface {
   id: string;
