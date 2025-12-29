@@ -4,7 +4,7 @@ import Button from "../shared/Button";
 import Context from "../../Context";
 import { toast } from "react-toastify";
 import socket from "../../lib/socket";
-import {  useNavigate, useParams } from "react-router-dom";
+import {  useParams } from "react-router-dom";
 import { Modal, notification,} from "antd";
 import HttpInterceptor from "../../lib/HttpInterceptor";
 
@@ -60,7 +60,6 @@ function formatCallTime(seconds: number): string {
 
 
 const Video = () => {
-    const navigate =  useNavigate()
     const [open, setOpne] = useState(false)
     const { session, sdp, setSdp } = useContext(Context)
     const {id} = useParams()
@@ -80,6 +79,8 @@ const Video = () => {
     const [isMic, setisMic] = useState(false)
     const [status, setStatus] = useState<callType>("pending")
     const [callTimer, setCallTimer] = useState(0)
+    const statusRef = useRef<callType>("pending")
+
 
 
     const stopAudio = ()=>{
@@ -103,102 +104,119 @@ const Video = () => {
         palyer.play()
     }
 
-    const toggleScreen = async()=>{
-        try {
+    const toggleScreen = async () => {
+    try {
+        const rtc = webRtcRef.current
+        if (!rtc) return
 
-            const localVideo = localVideoRef.current
-            
-            if(!localVideo){
-                return
-            }
+        const sender = rtc
+        .getSenders()
+        .find(s => s.track?.kind === "video")
 
-            if(!isScreenSharing) {
+        if (!sender) return
 
-                const stream = await navigator.mediaDevices.getDisplayMedia({video: true})
-                const screenShareTrack = stream.getVideoTracks()[0]
-                const senderVideoTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
-                
-                if(screenShareTrack && senderVideoTrack){
-                    await senderVideoTrack.replaceTrack(screenShareTrack)
-                }
+        const cameraStream = localStreamRef.current
+        const cameraTrack = cameraStream?.getVideoTracks()[0]
 
-                localVideo.srcObject = stream
-                localStreamRef.current = stream
-                setIsScreenSharing(true)
+        // SCREEN OFF (second click)
+        if (isScreenSharing) {
+        setIsScreenSharing(false)
 
-                // Detect screenshring off
-                screenShareTrack.onended = async ()=>{
-                    setIsScreenSharing(false)
-                    const videoCamStream = await navigator.mediaDevices.getUserMedia({video: true})
-                    const videoTrack = videoCamStream.getTracks()[0]
-                    const senderTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
-
-                    if(videoTrack && senderTrack) {
-                        await senderTrack.replaceTrack(videoTrack)
-                    }
-
-                    localVideo.srcObject = videoCamStream
-                    localStreamRef.current = videoCamStream
-                    setIsScreenSharing(true)
-                }
-            }
-            else {
-                const localStream = localStreamRef.current
-                
-
-                if (!localStream ) {
-                    return
-                }
-
-                localStream.getTracks().forEach((track)=>{
-                    track.stop()
-                })
-
-                localVideo.srcObject = null
-                localStreamRef.current = null
-                setIsScreenSharing(false)
-            }
-        } 
-        catch (error) {
-            CatchError(error)
+        if (cameraTrack) {
+            cameraTrack.enabled = true
+            setIsVideoSharing(true)
+            await sender.replaceTrack(cameraTrack)
         }
+
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = cameraStream
+        }
+
+        return
+        }
+
+        // SCREEN ON (first click)
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true
+        })
+
+        const screenTrack = screenStream.getVideoTracks()[0]
+        if (!screenTrack) return
+
+        // camera OFF
+        if (cameraTrack) {
+        cameraTrack.enabled = false
+        setIsVideoSharing(false)
+        }
+
+        await sender.replaceTrack(screenTrack)
+
+        if (localVideoRef.current) {
+        localVideoRef.current.srcObject = screenStream
+        }
+
+        setIsScreenSharing(true)
+
+        // screen band hone (browser stop share)
+        screenTrack.onended = async () => {
+        setIsScreenSharing(false)
+
+        if (cameraTrack) {
+            cameraTrack.enabled = true
+            setIsVideoSharing(true)
+            await sender.replaceTrack(cameraTrack)
+        }
+
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = cameraStream
+        }
+        }
+
+    } catch (error) {
+        CatchError(error)
+    }
     }
 
-    const toggleVideo = async()=>{
+    const toggleVideo = async () => {
         try {
-            const localVideo = localVideoRef.current
+            // First time: stream hi nahi hai
+            if (!localStreamRef.current) {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true,
+            })
 
-            if(!isVideoSharing){
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true})
-    
-                if(!localVideo) {
-                    return
-                }
-    
-                localVideo.srcObject = stream
-                localStreamRef.current = stream
-                setIsVideoSharing(true)
-                setisMic(true)
+            localStreamRef.current = stream
+
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = stream
             }
-            else{
-                const localStream =  localStreamRef.current
 
-                if(!localStream) {
-                    return
-                }
-
-                localStream.getTracks().forEach((track)=>{
-                    track.stop()
+            // WebRTC me track add 
+            const rtc = webRtcRef.current
+            if (rtc) {
+                stream.getTracks().forEach(track => {
+                rtc.addTrack(track, stream)
                 })
-                setIsVideoSharing(false)
-                setisMic(false)
             }
 
-        } 
-        catch (error) {
+            setIsVideoSharing(true)
+            setisMic(true)
+            return
+            }
+
+            // Stream already exists → sirf enable / disable
+            const videoTrack = localStreamRef.current.getVideoTracks()[0]
+            if (!videoTrack) return
+
+            videoTrack.enabled = !videoTrack.enabled
+            setIsVideoSharing(videoTrack.enabled)
+
+        } catch (error) {
             CatchError(error)
         }
-    }
+        }
+
 
     const toggleMic = ()=>{
          try {
@@ -379,58 +397,105 @@ const Video = () => {
     }
 
     //this is for who end and who rejected the call first
-    const endCallFromLocal = ()=>{
-         try {
-           setStatus("end")
-           playAudio("/audio/callCutNotification.mp3")
-           notify.destroy()
-           socket.emit("end", {to: id})
-           setCallTimer(0)
-           endStreaming()
-           setOpne(true)
-        } 
-        catch (error) {
-        playAudio("/audio/callCutNotification.mp3")
-           CatchError(error) 
+    const endCallFromLocal = () => {
+        try {
+            setStatus("end")
+            playAudio("/audio/callCutNotification.mp3")
+            notify.destroy()
+
+            socket.emit("end", { to: id })
+
+            setCallTimer(0)
+            endStreaming()
+            setOpne(true)
+            
+        } catch (error) {
+            playAudio("/audio/callCutNotification.mp3")
+            CatchError(error)
         }
     }
+
 
     const redirectOnCallEnd = ()=>{
         setOpne(false)
-        navigate("/app/online-friends")
+        window.location.href = '/app/online-friends';
+        // navigate("/app/online-friends")
     }
 
-    const endStreaming = ()=>{
-        localStreamRef.current?.getTracks().forEach((track)=>track.stop())
-        if(localVideoRef.current) {
+    const endStreaming = () => {
+        /* Stop and reset local media */
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => {
+                track.enabled = false
+                track.stop()
+            })
+            localStreamRef.current = null
+        }
+
+        /* Force stop all RTCRtpSenders (mic, cam, screen) */
+        if (webRtcRef.current) {
+            webRtcRef.current.getSenders().forEach(sender => {
+                if (sender.track) {
+                    sender.track.enabled = false
+                    sender.track.stop()
+                }
+            })
+
+            webRtcRef.current.onicecandidate = null
+            webRtcRef.current.ontrack = null
+            webRtcRef.current.onconnectionstatechange = null
+
+            webRtcRef.current.close()
+            webRtcRef.current = null
+        }
+
+        /* Reset media elements */
+        if (localVideoRef.current) {
+            localVideoRef.current.pause()
             localVideoRef.current.srcObject = null
         }
 
-        if(remoteVideoRef.current){
+        if (remoteVideoRef.current) {
+            remoteVideoRef.current.pause()
             remoteVideoRef.current.srcObject = null
         }
 
-        if(webRtcRef.current){ 
-            webRtcRef.current.close(); 
-            webRtcRef.current = null
-        }
-        
-    } 
+        /* Reset UI related flags (optional but recommended) */
+        setisMic(false)
+        setIsVideoSharing(false)
+        setIsScreenSharing(false)
+
+    }
+
+
 
     //to end call for remote controller
-    const endCallFromRemote = ()=>{
+    const endCallFromRemote = () => {
         setStatus("end")
         playAudio("/audio/callCutNotification.mp3")
         notify.destroy()
         setCallTimer(0)
         endStreaming()
         setOpne(true)
-        
     }
+
 
     
     //Event listeners
     const onOffer = (payload: onOfferInterface)=>{
+        if (statusRef.current === "talking") {
+
+            notification.open({
+                message: "📞 Busy",
+                description: "Please finish your current call before receiving another one.",
+                placement: "bottomRight",
+                duration: 15,
+                className: "bg-yellow-100 border border-yellow-400 rounded-xl p-4 shadow-lg text-yellow-800 text-sm font-medium",
+            });
+
+            socket.emit("busy", { to: payload.from.socketId })
+            return
+        }
         setStatus("incoming")
         notify.open({
             title: <h1 className="capitalize">{payload.from.fullname}</h1>,
@@ -464,6 +529,20 @@ const Video = () => {
         }
     }
 
+    const onBusy = () => {
+        stopAudio()
+        notify.destroy()
+
+        notify.open({
+        message: "⏳ User Busy",
+        description: "The user is currently on another call.",
+        placement: "bottomRight",
+        duration: 15,
+        className: "bg-yellow-50 border border-yellow-300 rounded-xl p-4 shadow-md text-yellow-800 text-sm font-medium flex flex-col gap-1",
+        });
+
+    }
+
     const OnAnswer = async(payload: onAnswerInterface)=>{
         console.log("eee",payload);
         try {
@@ -484,18 +563,24 @@ const Video = () => {
         }
     }
 
+    useEffect(() => {
+        statusRef.current = status
+    }, [status])
+
 
     useEffect(()=>{
         socket.on("offer", onOffer)
         socket.on("candidate", onCandidate)
         socket.on("answer", OnAnswer)
         socket.on("end", endCallFromRemote)
+        socket.on("busy", onBusy)
 
         return ()=>{
             socket.off("offer", onOffer)
             socket.off("candidate",onCandidate)
             socket.off("answer", OnAnswer)
             socket.off("end", endCallFromRemote)
+            socket.off("busy", onBusy)
         }
     }, [])
 
@@ -522,7 +607,6 @@ const Video = () => {
     //Detect comming offer
     useEffect(() => {
     if (sdp) {
-        console.log(sdp);
         notify.destroy()
         // Defer state update to avoid cascading renders
         setTimeout(() => {
@@ -540,7 +624,7 @@ const Video = () => {
             <button className="absolute bottom-5 left-5 text-xs px-2.5 py-1 rounded-lg text-white" style={{
                 background: 'rgba(255,255,255,0.1)'
                 }}>
-                Satyam Sharma
+                {`${session.fullname}(You)`}
             </button>
             <button onClick={()=>toggleFullScreen("remote")} className="absolute bottom-5 right-5 text-xs px-2.5 py-1 rounded-lg text-white hover:bg-white hover:scale-125" style={{
                 background: 'rgba(255,255,255,0.1)'

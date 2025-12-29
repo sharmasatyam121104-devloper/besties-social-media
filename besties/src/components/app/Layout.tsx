@@ -45,9 +45,8 @@ export interface ChatMessage {
 
 
 
- const ActivesessionUi = ({ liveActiveSession }: { liveActiveSession: OnlineUserInterface }) => {
+ const ActivesessionUi = ({ liveActiveSession ,onlineUsersContext}: { liveActiveSession: OnlineUserInterface ,onlineUsersContext: boolean},) => {
    const navigate = useNavigate()
-
     useEffect(() => {
       if (!liveActiveSession) {
         navigate("/app/online-friends")
@@ -73,9 +72,9 @@ export interface ChatMessage {
           <h3 className="text-lg font-semibold text-gray-900">
             { liveActiveSession.fullname}
           </h3>
-          <span className="text-sm text-green-600 font-medium">
-              Online
-            </span>
+          <span className={onlineUsersContext ? "text-green-500 text-xs" : "text-gray-400 text-xs"}>
+            {onlineUsersContext ? "Online" : "Offline"}
+          </span>
         </div>
 
       </div>
@@ -89,7 +88,7 @@ const Layout = () => {
   const [leftAsideSize, setLeftAsideSize] = useState(350)
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { session, setSession,liveActiveSession, setLiveActiveSession,setSdp } = useContext(Context)
+  const { session, setSession,liveActiveSession, setLiveActiveSession,setSdp, onlineUsersContext } = useContext(Context)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const params = useParams()
   const paramsArray = Object.keys(params)
@@ -395,7 +394,7 @@ const Layout = () => {
 
         {/* Pathname heading sticky under navbar */}
         <div className="sticky top-16  z-40 px-4 py-2">
-          <h1 className="text-gray-700 text-xl font-bold capitalize">{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession}/>}</h1>
+          <h1 className="text-gray-700 text-xl font-bold capitalize">{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession} onlineUsersContext={onlineUsersContext} />}</h1>
         </div>
 
         {/* Scrollable content */}
@@ -475,7 +474,7 @@ const Layout = () => {
              >
               <i className="ri-arrow-left-line"></i>
             </button>
-            <h1>{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession}/>}</h1>
+            <h1>{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession} onlineUsersContext={onlineUsersContext} />}</h1>
           </div>
          }
          divider

@@ -1,173 +1,221 @@
-import useSWR, { mutate } from "swr"
-import Card from "../shared/Card"
-import Fetcher from "../../lib/Fetcher"
-import Error from "../shared/Error"
-import { Empty, Skeleton } from "antd"
-import moment from "moment"
-import HttpInterceptor from "../../lib/HttpInterceptor"
-import CatchError from "../../lib/CatchError"
-import { toast } from "react-toastify"
-import { useContext, useEffect, useState } from "react"
-import Context from "../../Context"
-import { useNavigate } from "react-router-dom"
-import socket from "../../lib/socket"
-
+import useSWR, { mutate } from "swr";
+import Card from "../shared/Card";
+import Fetcher from "../../lib/Fetcher";
+import Error from "../shared/Error";
+import { Empty, notification, Skeleton } from "antd";
+import moment from "moment";
+import HttpInterceptor from "../../lib/HttpInterceptor";
+import CatchError from "../../lib/CatchError";
+import { toast } from "react-toastify";
+import { useContext, useEffect, useState } from "react";
+import Context from "../../Context";
+import { useNavigate } from "react-router-dom";
+import socket from "../../lib/socket";
 
 interface FriendInfo {
-  _id: string
-  image: string | null
-  fullname: string
-  email: string
+  _id: string;
+  image: string | null;
+  fullname: string;
+  email: string;
 }
 
 interface ItemInterface {
-  _id: string
-  user: FriendInfo
-  friend: FriendInfo
-  status: string
-  type?: string
-  createdAt: string
+  _id: string;
+  user: FriendInfo;
+  friend: FriendInfo;
+  status: string;
+  type?: string;
+  createdAt: string;
 }
 
-interface OnlineUser { id: string }
+interface OnlineUser {
+  id: string;
+}
 
 const Friends = () => {
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
-  const { session,setLiveActiveSession } = useContext(Context)
-  const currentUserId = session?.email // yahan session ya context se current user id aayega
-  const navigate = useNavigate()
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[] >([]);
+  const { session, setLiveActiveSession,setOnlineUsersContext } = useContext(Context);
+  const currentUserId = session?.email;
+  const navigate = useNavigate();
+  const [notify, notifyUi] = notification.useNotification();
 
-  useEffect(()=>{
-    socket.on("online",(users: OnlineUser[])=>{
-      setOnlineUsers(users)
-    })
- 
-    socket.emit("get-online")
-  },[])
+  // Socket listeners for online users
+  useEffect(() => {
+    socket.on("online", (users: OnlineUser[]) => {
+      setOnlineUsers(users);
+    });
 
-  const { data, error, isLoading } = useSWR("/friend/fetch-friend", Fetcher)
-  if (isLoading) {
-    return <Skeleton active />
-  }
+    socket.emit("get-online");
 
-  if (error) {
-    return <Error message={error.message} />
-  }
+    return () => {
+      socket.off("online");
+    };
+  }, []);
 
+  // Fetch friends
+  const { data, error, isLoading } = useSWR("/friend/fetch-friend", Fetcher);
+
+  if (isLoading) return <Skeleton active />;
+  if (error) return <Error message={error.message} />;
+
+  // Unfriend
   const handleUnfriend = async (id: string) => {
     try {
-      await HttpInterceptor.post("/friend/delete-friend", { friendId: id })
-      toast.success("Unfriend request success !")
-      mutate("/friend/fetch-friend")
+      await HttpInterceptor.post("/friend/delete-friend", { friendId: id });
+      toast.success("Unfriend request success!");
+      mutate("/friend/fetch-friend");
     } catch (error) {
-      CatchError(error)
+      CatchError(error);
     }
-  }
+  };
 
-  const generateActiveSession = (url: string, user:FriendInfo)=>{
-        setLiveActiveSession(user)
-        navigate(url)
+  // Generate active session (chat/audio/video)
+  const generateActiveSession = (
+    url: string,
+    friend: FriendInfo,
+    type: "chat" | "audio" | "video"
+  ) => {
+    const isOnline = onlineUsers.some((u) => u.id === friend._id);
+    setOnlineUsersContext(isOnline)
+
+    // For audio/video, friend must be online
+    if ((type === "audio" || type === "video") && !isOnline) {
+      notify.open({
+        title: "User Offline",
+        description: "The user is currently offline. Cannot start a call.",
+        placement: "bottomRight",
+        duration: 4,
+        className:
+          "bg-yellow-50 border border-yellow-300 rounded-xl p-4 shadow-md text-yellow-800 text-sm font-medium flex flex-col gap-1",
+      });
+      return;
     }
+
+    // Set session and navigate
+    setLiveActiveSession(friend);
+    navigate(url);
+  };
 
   return (
-    <div className="md:h-[575px]  overflow-y-auto">
-      
-        {data?.friends?.length === 0 && (
-          <div className="h-[400px] flex items-center justify-center">
-            <Empty description="No friends found" />
-          </div>
-        )}
+    <div className="md:h-[575px] overflow-y-auto">
+      {data?.friends?.length === 0 && (
+        <div className="h-[400px] flex items-center justify-center">
+          <Empty description="No friends found" />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 grid-cols-1 md:gap-8 gap-4 px-5">
         {data?.friends?.map((item: ItemInterface, index: number) => {
-          // frontend me decide kaun friend hai
-          const friend = item.user.email === currentUserId ? item.friend : item.user
-          
+          const friend =
+            item.user.email === currentUserId ? item.friend : item.user;
+          const isOnline = onlineUsers.some((u) => u.id === friend._id);
+
           return (
             <Card key={index}>
               <div className="flex flex-col items-center gap-3 text-center">
-
                 <div className="relative">
                   <img
                     src={friend.image || "/photos/images.jpeg"}
                     alt="pic"
                     className="w-16 h-16 rounded-full object-cover"
                   />
-
-                  {(onlineUsers.some(u => u.id === friend._id)
-                    ) && (
+                  {isOnline && (
                     <span className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></span>
                   )}
                 </div>
-                <h1 className="text-base font-medium text-black">{friend.fullname}</h1>
 
-                {item.status === "requested" 
-                  ? 
-                  (
-                      <>
-                        <p className="text-xs text-amber-500 font-medium">Request Sent</p>
-                        <p className="text-xs text-gray-400">
-                          Sent at: {moment(item.createdAt).format("DD MMM YYYY")}
-                        </p>
-                        <button
-                          onClick={() => handleUnfriend(friend._id)}
-                          className="bg-rose-400 text-white font-medium rounded px-2 py-1 text-xs hover:bg-rose-500 cursor-pointer mt-1"
-                        >
-                          <i className="ri-user-minus-line mr-1"></i>
-                          Cancel Request
-                        </button>
-                      </>
-                    )
-                    : 
-                   (
-                      <>
-                        <p className="text-xs text-green-500 font-medium">Friend</p>
-                        <p className="text-xs text-gray-400">
-                          Added on: {moment(item.createdAt).format("DD MMM YYYY")}
-                        </p>
-                        
-                        {/* ACTION BUTTONS */}
-                        <div className="flex items-center gap-3 mt-2">
+                <h1 className="text-base font-medium text-black">
+                  {friend.fullname}
+                </h1>
 
-                          {/* CHAT */}
-                          <button  onClick={()=>generateActiveSession(`/app/chat/${item._id}`,item.user)}
-                            className="text-blue-500 hover:text-blue-600 text-xl cursor-pointer"
-                            >
-                            <i className="ri-chat-1-line"></i>
-                          </button>
+                {item.status === "requested" ? (
+                  <>
+                    <p className="text-xs text-amber-500 font-medium">
+                      Request Sent
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Sent at: {moment(item.createdAt).format("DD MMM YYYY")}
+                    </p>
+                    <button
+                      onClick={() => handleUnfriend(friend._id)}
+                      className="bg-rose-400 text-white font-medium rounded px-2 py-1 text-xs hover:bg-rose-500 cursor-pointer mt-1"
+                    >
+                      <i className="ri-user-minus-line mr-1"></i>
+                      Cancel Request
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-green-500 font-medium">Friend</p>
+                    <p className="text-xs text-gray-400">
+                      Added on: {moment(item.createdAt).format("DD MMM YYYY")}
+                    </p>
 
-                          {/* AUDIO CALL */}
-                          <button  onClick={()=>generateActiveSession(`/app/audio-chat/${item._id}`,item.user)}
-                            className="text-green-500 hover:text-green-600 text-xl cursor-pointer"
-                            >
-                            <i className="ri-phone-line"></i>
-                          </button>
+                    {/* ACTION BUTTONS */}
+                    <div className="flex items-center gap-3 mt-2">
+                      {/* CHAT */}
+                      <button
+                        onClick={() =>
+                          generateActiveSession(`/app/chat/${friend._id}`, friend, "chat")
+                        }
+                        className="text-blue-500 hover:text-blue-600 text-xl cursor-pointer"
+                      >
+                        <i className="ri-chat-1-line"></i>
+                      </button>
 
-                          {/* VIDEO CALL */}
-                          <button onClick={()=>generateActiveSession(`/app/video-chat/${item._id}`,item.user)}
-                            className="text-purple-500 hover:text-purple-600 text-xl cursor-pointer"
-                            >
-                            <i className="ri-video-chat-line"></i>
-                          </button>
-                        </div>
+                      {/* AUDIO CALL */}
+                      <button
+                        onClick={() =>
+                          generateActiveSession(
+                            `/app/audio-chat/${friend._id}`,
+                            friend,
+                            "audio"
+                          )
+                        }
+                        className={`text-green-500 text-xl cursor-pointer hover:text-green-600 ${
+                          !isOnline ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        title={isOnline ? "Audio Call" : "User Offline"}
+                      >
+                        <i className="ri-phone-line"></i>
+                      </button>
 
-                        <button
-                          onClick={() => handleUnfriend(friend._id)}
-                          className="bg-rose-500 text-white font-medium rounded px-2 py-1 text-xs hover:bg-rose-600 cursor-pointer mt-2"
-                          >
-                          <i className="ri-user-minus-line mr-1"></i>
-                          Unfriend
-                        </button>
-                      </>
-                    )
-                  }
+                      {/* VIDEO CALL */}
+                      <button
+                        onClick={() =>
+                          generateActiveSession(
+                            `/app/video-chat/${friend._id}`,
+                            friend,
+                            "video"
+                          )
+                        }
+                        className={`text-purple-500 text-xl cursor-pointer hover:text-purple-600 ${
+                          !isOnline ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        title={isOnline ? "Video Call" : "User Offline"}
+                      >
+                        <i className="ri-video-chat-line"></i>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => handleUnfriend(friend._id)}
+                      className="bg-rose-500 text-white font-medium rounded px-2 py-1 text-xs hover:bg-rose-600 cursor-pointer mt-2"
+                    >
+                      <i className="ri-user-minus-line mr-1"></i>
+                      Unfriend
+                    </button>
+                  </>
+                )}
               </div>
             </Card>
-          )
+          );
         })}
       </div>
-    </div>
-  )
-}
 
-export default Friends
+      {notifyUi}
+    </div>
+  );
+};
+
+export default Friends;

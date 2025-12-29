@@ -26,9 +26,10 @@ const App = () => {
   const [session , setSession] = useState(null)
   const [liveActiveSession, setLiveActiveSession] = useState(null)
   const [sdp, setSdp] = useState(null)
+  const [onlineUsersContext, setOnlineUsersContext] = useState(null)
 
   return (
-      <Context.Provider value={{session, setSession, liveActiveSession, setLiveActiveSession, sdp, setSdp}}>
+      <Context.Provider value={{session, setSession, liveActiveSession, setLiveActiveSession, sdp, setSdp, onlineUsersContext, setOnlineUsersContext}}>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home/>}/>
