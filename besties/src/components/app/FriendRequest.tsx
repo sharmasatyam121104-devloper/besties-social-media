@@ -8,6 +8,7 @@ import HttpInterceptor from "../../lib/HttpInterceptor"
 import { useState } from "react"
 import { toast } from "react-toastify"
 import moment from "moment"
+import { useNavigate } from "react-router-dom"
 
 interface LoadingInterface {
   index: number | null
@@ -33,6 +34,7 @@ const FriendRequest = () => {
     index: null,
     action: null,
   })
+  const navigate = useNavigate()
 
   const { data, error, isLoading } = useSWR(
     "/friend/friend-request",
@@ -73,6 +75,10 @@ const FriendRequest = () => {
     }
   }
 
+  const handleOtherprofile = (id:string)=>{
+      navigate(`/app/other-profile/${id}`) 
+    }
+
   return (
     <div className="md:h-[250px] h-190 sm:overflow-y-hidden">
       <Card title="Friend Requests" divider>
@@ -93,9 +99,10 @@ const FriendRequest = () => {
               {/* Left */}
               <div className="flex items-center gap-3">
                 <img
-                  src={item.user.image || "/photos/images.jpeg"}
+                  src={item.user.image || "/photos/blank_profile.jpg"}
                   alt="avatar"
                   className="h-12 w-12 rounded-full object-cover"
+                  onClick={()=>handleOtherprofile(item?.user?._id)}
                 />
 
                 <div>

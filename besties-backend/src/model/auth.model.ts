@@ -37,6 +37,10 @@ const authSchema = new Schema({
     },
     expiry: {
         type: Date
+    },
+    bio: {
+        type: String,
+        default: "" 
     }
 },{timestamps: true})
 

@@ -3,7 +3,7 @@ import { Server } from "socket.io"
 const VideoSocket = (io: Server) => {
   io.on("connection", (socket) => {
 
-    // 🔹 OFFER
+    //OFFER
     socket.on("offer", ({ offer, to, from, type }) => {
       // caller ki socket id inject
       from.socketId = socket.id
@@ -15,7 +15,7 @@ const VideoSocket = (io: Server) => {
       })
     })
 
-    // 🔹 ICE CANDIDATE
+    //ICE CANDIDATE
     socket.on("candidate", ({ candidate, to }) => {
       io.to(to).emit("candidate", {
         candidate,
@@ -23,7 +23,7 @@ const VideoSocket = (io: Server) => {
       })
     })
 
-    // 🔹 ANSWER
+    // ANSWER
     socket.on("answer", ({ answer, to }) => {
       io.to(to).emit("answer", {
         answer,
@@ -36,7 +36,7 @@ const VideoSocket = (io: Server) => {
     })
 
 
-    // 🔹 END CALL (IMPORTANT)
+    //END CALL (IMPORTANT)
     socket.on("end", ({ to }) => {
       io.to(to).emit("end", {
         from: socket.id
@@ -44,7 +44,7 @@ const VideoSocket = (io: Server) => {
     })
 
     socket.on("disconnect", () => {
-      console.log("socket disconnected:", socket.id)
+      // console.log("socket disconnected:", socket.id)
     })
   })
 }

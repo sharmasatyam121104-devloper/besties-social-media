@@ -7,20 +7,27 @@ import HttpInterceptor from "../lib/HttpInterceptor"
 import { toast } from "react-toastify"
 import CatchError from "../lib/CatchError"
 import { useMediaQuery } from "react-responsive"
+import { useState } from "react"
 
 
 
 const Signup = () => {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
   const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
   const handleSignup = async (value: FormDataType)=>{
     try {
+      setLoading(true)
       const {data} = await HttpInterceptor.post("/auth/signup", value)
       toast.success(data.message)
       navigate('/login')
+      setLoading(false)
     } catch (error) 
     {
       CatchError(error)
+    }
+    finally{
+      setLoading(false)
     }
   }
   return (
@@ -59,7 +66,7 @@ const Signup = () => {
                         name="mobile"
                         placeholder="Mobile"
                       />
-                      <Button type="danger" icon="arrow-right-up-line">Sign up</Button>
+                      <Button type="danger" loading={loading} icon="arrow-right-up-line">Sign up</Button>
                     </Form>
                     <div className="flex gap-2">
                       <p>Don`t` have an account ?</p>
@@ -104,7 +111,7 @@ const Signup = () => {
                     placeholder="Mobile"
                   />
 
-                  <Button type="danger" icon="arrow-right-up-line">Sign up</Button>
+                  <Button type="danger" loading={loading} icon="arrow-right-up-line">Sign up</Button>
                 </Form>
                 <div className="flex gap-2">
                   <p>Already have an account ?</p>

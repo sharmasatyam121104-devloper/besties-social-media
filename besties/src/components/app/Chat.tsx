@@ -13,6 +13,7 @@ import HttpInterceptor from "../../lib/HttpInterceptor";
 import {v4 as uuid} from 'uuid'
 import SmallButton from "../shared/SmallButton";
 import moment from "moment";
+import { message } from "antd";
 
 interface fromInfo {
   id: string;
@@ -46,7 +47,7 @@ const AttachmentUi: FC<AttachmentInterface> = ({ file }) => {
     return (
       <div className="mt-2 max-w-xs rounded-xl overflow-hidden border shadow-sm bg-white">
         <img
-          src={file.path}
+          src={file.path || "/photos/blank_profile.jpg"}
           alt="attachment"
           className="w-full h-auto object-cover"
         />
@@ -194,6 +195,12 @@ const Chat = () => {
       const ext = file.name.split(".").pop()
       const filename = `${uuid()}.${ext}`
       const path = `chats/${filename}`
+      const maxSize = 15 * 1024 * 1024 // 15MB
+      if (file.size > maxSize) {
+        message.error("File size cannot exceed 15MB")
+        return
+      }
+
       const payload = {
         path,
         type:file.type,
@@ -255,7 +262,7 @@ const Chat = () => {
 
   return (
     <div>
-      <div className="h-[700px] md:h-[500px] overflow-y-auto space-y-8" ref={chatContainer}>
+      <div className="h-[650px] md:h-[500px] overflow-y-auto space-y-8" ref={chatContainer}>
         {chats.map((item, index) => (
         <div
             key={index}

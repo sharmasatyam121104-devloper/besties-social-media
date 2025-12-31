@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate, useParams } from "react-router-dom"
+import { Link, NavLink, Outlet, useLocation, useNavigate, } from "react-router-dom"
 import Avatar from "../shared/Avatar"
 import Card from "../shared/Card"
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
@@ -39,10 +39,6 @@ export interface ChatMessage {
   message: string;
   file?: ChatFile | null;
 }
-
-
-
-
 
 
  const ActivesessionUi = ({ liveActiveSession ,onlineUsersContext}: { liveActiveSession: OnlineUserInterface ,onlineUsersContext: boolean},) => {
@@ -90,8 +86,6 @@ const Layout = () => {
   const navigate = useNavigate()
   const { session, setSession,liveActiveSession, setLiveActiveSession,setSdp, onlineUsersContext } = useContext(Context)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
-  const params = useParams()
-  const paramsArray = Object.keys(params)
   const audio  = useRef<HTMLAudioElement | null>(null)
   const [notify, notifyUi] = notification.useNotification()
   
@@ -137,6 +131,16 @@ const Layout = () => {
       herf: "/app/friends",
       icon: "ri-group-line",
       label: "Friends",
+    },
+    {
+      herf: "/app/profile",
+      icon: "ri-account-circle-line",
+      label: "My Profile",
+    },
+    {
+      herf: "/app/user-settings",
+      icon: "ri-user-settings-line",
+      label: "Settings",
     },
     
   ]
@@ -189,9 +193,15 @@ const Layout = () => {
   }, [error, handleLogout])
 
 
-  const getPathname = (path: string)=>{
-    return path.split('/').pop()?.split("-").join(' ')
+  const getPathname = (path: string) => {
+    const lastSegment = path.split('/').pop()
+    // Agar last segment id jaisi hai (length 24 for MongoDB ObjectId), return previous segment
+    if (lastSegment && /^[0-9a-fA-F]{24}$/.test(lastSegment)) {
+      return path.split('/').slice(-2, -1)[0].split("-").join(' ')
+    }
+    return lastSegment?.split("-").join(' ')
   }
+
 
   const handleLeftAsideSize = ()=>{
 
@@ -312,12 +322,12 @@ const Layout = () => {
                   session &&
                   leftAsideSize === 137 
                   ?   (<img 
-                  src={session.image || "/photos/images.jpeg"} alt="" 
+                  src={session.image || "/photos/blank_profile.jpg"} alt="" 
                   className="w-10 h-10 rounded-full object-cover"/>)
                   : (<Avatar 
                       title={session.fullname}
                       subtitle={session.email}
-                      image={session.image || "/photos/images.jpeg"}
+                      image={session.image || "/photos/blank_profile.jpg"}
                       titleColor="white"
                       subtitleColor="#f5f5f5"
                       onClick={uploadImage}
@@ -394,7 +404,13 @@ const Layout = () => {
 
         {/* Pathname heading sticky under navbar */}
         <div className="sticky top-16  z-40 px-4 py-2">
-          <h1 className="text-gray-700 text-xl font-bold capitalize">{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession} onlineUsersContext={onlineUsersContext} />}</h1>
+          <h1 className="font-bold capitalize text-2xl">
+              {pathname.includes("/chat/") ||
+              pathname.includes("/video-chat/") ||
+              pathname.includes("/audio-chat/")
+                ? <ActivesessionUi liveActiveSession={liveActiveSession} onlineUsersContext={onlineUsersContext} />
+                : getPathname(pathname)}
+          </h1>
         </div>
 
         {/* Scrollable content */}
@@ -422,12 +438,12 @@ const Layout = () => {
             session &&
             leftAsideSize === 137 
             ?   (<img 
-            src={session.image || "/photos/images.jpeg"} alt="" 
+            src={session.image || "/photos/blank_profile.jpg"} alt="" 
             className="w-10 h-10 rounded-full object-cover"/>)
              : (<Avatar 
                 title={session.fullname}
                 subtitle={session.email}
-                image={session.image || "/photos/images.jpeg"}
+                image={session.image || "/photos/blank_profile.jpg"}
                 titleColor="white"
                 subtitleColor="#f5f5f5"
                 onClick={uploadImage}
@@ -438,13 +454,24 @@ const Layout = () => {
 
               {
                 menu.map((item, index)=>(
-              <Link to={item.herf} key={index} title={item.label} className="flex items-center gap-4 text-gray-300 py-3 px-2 hover:text-gray-50">
-                <i className={`${item.icon} text-2xl`}></i>
-                {
-                  leftAsideSize === 350 &&
-                  <label>{item.label}</label>
-                }
-              </Link>
+                <NavLink
+                  to={item.herf}
+                  key={index}
+                  title={item.label}
+                  className={({ isActive }) =>
+                    `
+                    flex items-center gap-4 py-3 px-2 rounded-lg transition
+                    ${isActive 
+                      ? "text-blue-500 bg-blue-500/10 border-l-4 border-blue-500"
+                      : "text-gray-300 hover:text-gray-50"
+                    }
+                    `
+                  }
+                >
+                  <i className={`${item.icon} text-2xl`}></i>
+
+                  {leftAsideSize === 350 && <label>{item.label}</label>}
+                </NavLink>
                 ))
               }
               <button title="Logout" onClick={handleLogout} className="flex items-center gap-2 text-gray-300 py-3 hover:text-gray-50 cursor-pointer px-2">
@@ -474,7 +501,13 @@ const Layout = () => {
              >
               <i className="ri-arrow-left-line"></i>
             </button>
-            <h1>{paramsArray.length === 0 ? getPathname(pathname) : <ActivesessionUi liveActiveSession={liveActiveSession} onlineUsersContext={onlineUsersContext} />}</h1>
+            <h1>
+              {pathname.includes("/chat/") ||
+              pathname.includes("/video-chat/") ||
+              pathname.includes("/audio-chat/")
+                ? <ActivesessionUi liveActiveSession={liveActiveSession} onlineUsersContext={onlineUsersContext} />
+                : getPathname(pathname)}
+            </h1>
           </div>
          }
          divider

@@ -1,16 +1,29 @@
 import axios from "axios"
 import { toast, type ToastPosition } from "react-toastify"
 
-const CatchError = (error:unknown,position:ToastPosition = "top-center") => {
-  if(axios.isAxiosError(error)){
-        return toast.error(error.response?.data.message,{position})
-      }
+const CatchError = (
+  error: unknown,
+  position: ToastPosition = "top-center"
+) => {
+  // Axios error
+  if (axios.isAxiosError(error)) {
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "Something went wrong"
 
-    if(error instanceof Error){
-        return toast.error(error.message,{position})
-    }
+    toast.error(message, { position })
+    return
+  }
 
-    return toast.error("Network error",{position})
+  // JS Error
+  if (error instanceof Error) {
+    toast.error(error.message, { position })
+    return
+  }
+
+  // Fallback
+  toast.error("Network error. Please try again.", { position })
 }
 
-export default CatchError;
+export default CatchError

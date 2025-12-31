@@ -2,12 +2,13 @@ import { SessionInterface } from "../middleware/auth.middleware"
 import PostModel from "../model/post.model"
 import { Response } from "express"
 import { catchError } from "../util/errorHandler"
+import AuthModel from "../model/auth.model"
+import FriendModel from "../model/friend.model"
 
 export const createPost = async (req: SessionInterface, res: Response)=>{
     try {
         req.body.user = req.session?.id
         const post = await PostModel.create(req.body)
-        
         res.json(post)
     }
     catch(err)
@@ -36,7 +37,48 @@ export const fetchMyPosts = async (req: SessionInterface, res: Response) => {
       .sort({ createdAt: -1 })
       .populate("user", "fullname image email");
 
-    res.json(posts);
+    res.json({posts});
+  } catch (err) {
+    catchError(err, res, "Failed to fetch my posts");
+  }
+};
+
+export const fetchMyProfile = async (req: SessionInterface, res: Response) => {
+  try {
+    const userId = req.session?.id;
+
+    const posts = await PostModel.find({ user: userId })
+      .sort({ createdAt: -1 })
+    const user = await AuthModel.findById(userId).select("-password")
+    const friendCount = await FriendModel.countDocuments({
+                    status: "accepted",
+                    $or: [
+                      { user: userId },
+                      { friend: userId }
+                    ]
+                  });
+
+    res.json({posts,user,friendCount});
+  } catch (err) {
+    catchError(err, res, "Failed to fetch my posts");
+  }
+};
+
+export const fetchOtherProfile = async (req: SessionInterface, res: Response) => {
+  try {
+    const userId = req.params.id;
+    const posts = await PostModel.find({ user: userId })
+      .sort({ createdAt: -1 })
+    const user = await AuthModel.findById(userId).select("-password")
+    const friendCount = await FriendModel.countDocuments({
+                    status: "accepted",
+                    $or: [
+                      { user: userId },
+                      { friend: userId }
+                    ]
+                  });
+
+    res.json({posts,user,friendCount});
   } catch (err) {
     catchError(err, res, "Failed to fetch my posts");
   }

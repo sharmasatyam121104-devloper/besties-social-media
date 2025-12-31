@@ -84,6 +84,9 @@ useEffect(() => {
       setLiveActiveSession(user)
       navigate(url)
   }
+  const handleOtherprofile = (id:string)=>{
+    navigate(`/app/other-profile/${id}`) 
+  }
 
   return (
     <div className="overflow-y-auto md:h-full h-189">
@@ -99,8 +102,9 @@ useEffect(() => {
             >
               <Avatar
                 size="md"
-                image={item.image || "/photos/images.jpeg"}
+                image={item.image || "/photos/blank_profile.jpg"}
                 title={item.fullname}
+                onClick={()=>handleOtherprofile(item.id)}
                 subtitle={
                   <small className="text-green-400 font-medium">Online</small>
                 }

@@ -68,7 +68,7 @@ const MyPost = () => {
 
 
       {data &&
-        data.map((item: PostItemInterface) => (
+        data.posts.map((item: PostItemInterface) => (
           <Card key={item._id}>
             <div className="space-y-4">
               {/* Post Media */}
@@ -111,7 +111,7 @@ const MyPost = () => {
                 </div>
 
                 <img
-                  src={ item?.user?.image ?? "/images/placeholder.jpg"}
+                  src={ item?.user?.image ?? "/photos/blank_profile.jpg"}
                   alt="user"
                   className="w-14 h-14 rounded-full object-cover"
                 />

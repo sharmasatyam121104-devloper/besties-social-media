@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { getSession, login, logout, refreshToken, signup, upadteProfile } from "../controller/auth.controller"
+import { getSession, login, logout, refreshToken, signup, upadteProfile, upadteProfileData } from "../controller/auth.controller"
 import { AuthMiddleware } from "../middleware/auth.middleware"
 import RefreshToken from "../middleware/refresh.middleware"
 const AuthRouter = Router()
@@ -10,6 +10,8 @@ AuthRouter.post('/logout',logout)
 AuthRouter.get('/refresh-token', RefreshToken, refreshToken)
 AuthRouter.get('/session',AuthMiddleware, getSession)
 AuthRouter.put('/profile-picture', AuthMiddleware, upadteProfile)
+AuthRouter.put('/profile-data', AuthMiddleware, upadteProfileData)
+
 
 
 

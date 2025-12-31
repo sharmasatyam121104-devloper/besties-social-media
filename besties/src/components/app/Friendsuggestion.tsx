@@ -9,6 +9,7 @@ import HttpInterceptor from "../../lib/HttpInterceptor"
 import { useState } from "react"
 import { toast } from "react-toastify"
 import moment from "moment"
+import { useNavigate } from "react-router-dom"
 
 
 interface LoadingInterface {
@@ -24,8 +25,9 @@ interface ItemInterface {
 }
 
 const Friendsuggestion = () => {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState<LoadingInterface>({state: false, index: null})
-    const {data, error, isLoading} = useSWR('/friend/friend-suggestion', Fetcher)
+  const {data, error, isLoading} = useSWR('/friend/friend-suggestion', Fetcher)
   
 
     const sendFriendRequest = async(id: string, index: number)=>{
@@ -42,6 +44,10 @@ const Friendsuggestion = () => {
         finally{
           setLoading({state: false, index: null})
         }
+    }
+
+    const handleOtherprofile = (id:string)=>{
+      navigate(`/app/other-profile/${id}`) 
     }
 
   return (
@@ -61,9 +67,10 @@ const Friendsuggestion = () => {
               {/* Left Section */}
               <div className="flex items-center gap-3">
                 <img
-                  src={item.image || "/photos/images.jpeg"}
+                  src={item.image || "/photos/blank_profile.jpg"}
                   alt="avatar"
                   className="h-12 w-12 rounded-full object-cover"
+                  onClick={()=>handleOtherprofile(item._id)}
                 />
 
                 <div>

@@ -79,29 +79,6 @@ export const login = async (req: Request, res: Response)=>{
     }
 }
 
-// export const refreshToken = async (req: SessionInterface, res: Response)=>{
-//     try {
-
-//         if(!req.session){
-//            throw tryError("Failed to refresh token",401)
-//         }
-       
-//        const {accessToken,refreshToken} = genrateToken(req.session)
-//        await AuthModel.updateOne({_id: req.session.id},{$set: {
-//         refreshToken,
-//         expiry: moment().add(7,"days").toDate()
-//        }})
-
-//        res.cookie("accessToken", accessToken, getOptions('at'))
-//         res.cookie("refreshToken", refreshToken, getOptions('rt'))
-//         res.json({message: "Token refreshed"})
-       
-//     } 
-//     catch (error) {
-//         catchError(error,res, "Failed to refresh token.")
-//     }
-// }
-
 export const refreshToken = async (req: Request, res: Response) => {
   try {
     const token = req.cookies.refreshToken
@@ -172,6 +149,52 @@ export const upadteProfile = async(req: SessionInterface, res: Response)=>{
     } 
     catch (error) {
         catchError(error,res, "Failed to update Profile picture.")
+    }
+}
+
+export const upadteProfileData = async(req: SessionInterface, res: Response)=>{
+    try {
+
+        if (!req.session?.id) {
+            throw tryError("Unauthorized", 401)
+        }
+        const { fullname, bio, path } = req.body
+        
+        const updateData: any = {}
+
+        if (path) {
+            updateData.image = `${process.env.S3_URL}/${path}`
+        }
+
+        if (fullname) {
+            updateData.fullname = fullname
+        }
+
+        if (bio) {
+            updateData.bio = bio
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            throw tryError(
+                "At least one field (image, fullname, bio) is required",
+                400
+            )
+        }
+
+        const user = await AuthModel.findByIdAndUpdate(
+            req.session.id,
+            { $set: updateData },
+            { new: true }
+            )
+
+            res.json({
+                message: "Profile updated successfully",
+                updatedFields: updateData,
+                user
+            })
+        } 
+    catch (error) {
+        catchError(error,res, "Failed to update Profile .")
     }
 }
 

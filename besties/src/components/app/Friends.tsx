@@ -96,6 +96,10 @@ const Friends = () => {
     navigate(url);
   };
 
+  const handleOtherprofile = (id:string)=>{
+    navigate(`/app/other-profile/${id}`) 
+  }
+
   return (
     <div className="md:h-[575px] overflow-y-auto">
       {data?.friends?.length === 0 && (
@@ -115,9 +119,10 @@ const Friends = () => {
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="relative">
                   <img
-                    src={friend.image || "/photos/images.jpeg"}
+                    src={friend.image || "/photos/blank_profile.jpg"}
                     alt="pic"
                     className="w-16 h-16 rounded-full object-cover"
+                    onClick={()=>handleOtherprofile(friend._id)}
                   />
                   {isOnline && (
                     <span className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></span>

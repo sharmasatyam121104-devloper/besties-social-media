@@ -1,25 +1,37 @@
 import { Link, useNavigate } from "react-router-dom"
-import Button from "./shared/Button"
 import Card from "./shared/Card"
 import Input from "./shared/Input"
 import Form, { type FormDataType } from "./shared/Form"
 import HttpInterceptor from "../lib/HttpInterceptor"
 import CatchError from "../lib/CatchError"
 import { useMediaQuery } from "react-responsive"
+import { Button } from "antd"
+import { useState } from "react"
+import { ArrowUpOutlined } from "@ant-design/icons"
+
+
 
 
 
 const Login = () => {
   const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
+  const [loading, setLoading] = useState(false)
+
   const navigate = useNavigate()
   const handleLogin = async (value: FormDataType)=>{
     try {
+      setLoading(true)
       await HttpInterceptor.post("/auth/login",value)
       navigate("/app")
+      setLoading(false)
     } 
     catch (error: unknown) 
     {
       CatchError(error)
+    }
+    finally 
+    {
+    setLoading(false)
     }
   }
   return (
@@ -49,7 +61,22 @@ const Login = () => {
                         placeholder="Password"
                       />
 
-                      <Button type="danger" icon="arrow-right-up-line">Sign in</Button>
+                      <Button
+                        className="h-12! "
+                          type="primary"
+                          danger
+                          loading={loading}
+                          htmlType="submit"
+                          block
+                          icon={
+                                !loading && (
+                                  <ArrowUpOutlined style={{ transform: "rotate(45deg)" }} />
+                              )
+                            }
+                          >
+                          {loading ? "Signing in..." : "Sign in"}
+                      </Button>
+
                     </Form>
                     <div className="flex gap-2">
                       <p>Don`t` have an account ?</p>
@@ -84,7 +111,21 @@ const Login = () => {
                         placeholder="Password"
                       />
 
-                      <Button type="danger" icon="arrow-right-up-line">Sign in</Button>
+                      <Button
+                      className="h-10! w-25!"
+                        type="primary"
+                        danger
+                        loading={loading}
+                        htmlType="submit"
+                        block
+                         icon={
+                              !loading && (
+                                <ArrowUpOutlined style={{ transform: "rotate(45deg)" }} />
+                            )
+                          }
+                        >
+                        {loading ? "Signing in..." : "Sign in"}
+                    </Button>
                     </Form>
                     <div className="flex gap-2">
                       <p>Don`t` have an account ?</p>

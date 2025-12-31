@@ -20,6 +20,9 @@ import Friendsuggestion from "./components/app/Friendsuggestion"
 import FriendRequest from "./components/app/FriendRequest"
 import OnlineFriends from "./components/app/OnlineFriends"
 import MyPost from "./components/app/MyPost"
+import UserSetting from "./components/app/UserSetting"
+import Profile from "./components/app/Profile"
+import OtherProfile from "./components/app/OtherProfile"
 
 
 const App = () => {
@@ -48,6 +51,9 @@ const App = () => {
               <Route path="suggestion" element={<Friendsuggestion/>}/>
               <Route path="accept-friend-request" element={<FriendRequest/>}/>
               <Route path="online-friends" element={<OnlineFriends/>}/>
+              <Route path="user-settings" element={<UserSetting/>}/>
+              <Route path="profile" element={<Profile/>}/>
+              <Route path="other-profile/:id" element={<OtherProfile/>}/>
             </Route>
           </Route>
             <Route path="*" element={<NotFound />} />

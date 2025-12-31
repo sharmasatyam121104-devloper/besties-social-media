@@ -18,7 +18,7 @@ const Avatar:FC<AvatarInterface> = ({key=0, title,subtitle = "subtitle missing" 
             image && 
             <img 
             onClick={onClick}
-            src={image} alt="" 
+            src={image || '/photos/blank_profile.jpg'} alt="profile" 
             className={`${size === "lg" ? "w-12 h-12" : "h-8 w-8" } rounded-full object-cover cursor-pointer`}
             />
         }
@@ -26,7 +26,7 @@ const Avatar:FC<AvatarInterface> = ({key=0, title,subtitle = "subtitle missing" 
         {
             title && subtitle && 
             <div className="flex flex-col text-white">
-                <h1 className={`${size === "lg" ? "text-lg/6" : "text-sm"}text-lg/6 font-medium`} style={{color:titleColor}}>
+                <h1 className={`${size === "lg" ? "text-lg/6" : "text-sm"}text-lg/6 font-medium capitalize`} style={{color:titleColor}}>
                 {title}
                 </h1>
                 <div style={{color:subtitleColor}}> 
