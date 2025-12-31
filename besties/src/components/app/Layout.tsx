@@ -336,7 +336,7 @@ const Layout = () => {
                   <button
                     className="text-white text-2xl ml-10"
                     onClick={() => setIsMobileSidebarOpen(false)}
-                  >
+                    >
                     <i className="ri-close-line"></i>
                   </button>
                 </div>
@@ -440,14 +440,14 @@ const Layout = () => {
             ?   (<img 
             src={session.image || "/photos/blank_profile.jpg"} alt="" 
             className="w-10 h-10 rounded-full object-cover"/>)
-             : (<Avatar 
-                title={session.fullname}
-                subtitle={session.email}
-                image={session.image || "/photos/blank_profile.jpg"}
-                titleColor="white"
-                subtitleColor="#f5f5f5"
-                onClick={uploadImage}
-              />)
+            : (<Avatar 
+              title={session.fullname}
+              subtitle={session.email}
+              image={session.image || "/photos/blank_profile.jpg"}
+              titleColor="white"
+              subtitleColor="#f5f5f5"
+              onClick={uploadImage}
+            />)
           }
             
             <div className={`${leftAsideSize === 350 && "animate__animated animate__fadeInLeft "}`}>

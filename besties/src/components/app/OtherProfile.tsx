@@ -2,12 +2,14 @@
 const env = import.meta.env
 
 import React from "react"
-import { Avatar, Skeleton, Empty } from "antd"
+import { Avatar, Skeleton, Empty, message } from "antd"
 import moment from "moment"
 import Fetcher from "../../lib/Fetcher"
-import useSWR from "swr"
+import useSWR, { mutate } from "swr"
 import { useParams } from "react-router-dom"
 import type { PostInterface } from "./Post"
+import CatchError from "../../lib/CatchError"
+import HttpInterceptor from "../../lib/HttpInterceptor"
 
 
 
@@ -30,6 +32,103 @@ const OtherProfile: React.FC = () => {
         <Empty description="Failed to load profile" />
       </div>
     )
+  }
+
+    // ---------------- LIKE -------------------
+  const addLike = async (postId: string) => {
+    try {
+      const {data} = await HttpInterceptor.post(`/post/like/${postId}`);
+      return data
+    } 
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  const removeLike = async (postId: string) => {
+    try {
+      const {data} = await HttpInterceptor.delete(`/post/like/${postId}`);
+      return data; // { message: "Like removed" }
+    } 
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+    // ---------------- DISLIKE -------------------
+  const addDislike = async (postId: string) => {
+    try {
+      const {data} = await HttpInterceptor.post(`/post/dislike/${postId}`);
+      return data; // { message: "Disliked" }
+    }
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  const removeDislike = async (postId: string) => {
+    try {
+      const {data}= await HttpInterceptor.delete(`/post/dislike/${postId}`);
+      return data; // { message: "Dislike removed" }
+    }
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  // ---------------- COMMENT -------------------
+  // const addComment = async (postId: string, content: string) => {
+  //   try {
+  //     const {data} = await HttpInterceptor.post(`/post/comment/${postId}`, { content });
+  //     return data; // created comment object
+  //   }
+  //   catch (err) {
+  //     CatchError(err)
+  //   }
+  // };
+
+  // const removeComment = async (postId: string, commentId: string) => {
+  //   try {
+  //     const {data} = await HttpInterceptor.delete(`/post/comment/${postId}/${commentId}`);
+  //     return data; // { message: "Comment removed" }
+  //   }
+  //   catch (err) {
+  //     CatchError(err)
+  //   }
+  // };
+
+
+
+  const handleLike = async (post: PostInterface) => {
+  try {
+    if (post.isLiked) {
+      await removeLike(post._id)
+    } else {
+      await addLike(post._id)
+    }
+    mutate(`/post/other-profile/${id}`)
+  } catch (err) {
+    CatchError(err)
+  }
+}
+
+
+  const handleDislike = async (post: PostInterface) => {
+  try {
+    if (post.isDisliked) {
+      await removeDislike(post._id)
+    } else {
+      await addDislike(post._id)
+    }
+    mutate(`/post/other-profile/${id}`)
+  } catch (err) {
+    CatchError(err)
+  }
+}
+
+
+  const handleComingSoon = () => {
+    message.info("This feature is coming soon!")
   }
 
   return (
@@ -116,14 +215,28 @@ const OtherProfile: React.FC = () => {
 
                   {/* Actions */}
                   <div className="border-t px-4 py-3 flex gap-12 text-sm text-gray-600">
-                    <button className="flex items-center gap-1 hover:text-blue-600">
-                      <i className="ri-thumb-up-line text-2xl"></i> {post.like || 0}
-                    </button>
-                    <button className="flex items-center gap-1 hover:text-red-500">
-                      <i className="ri-thumb-down-line text-2xl"></i> {post.dislike || 0}
-                    </button>
-                    <button className="flex items-center gap-1 hover:text-green-600">
-                      <i className="ri-chat-1-line text-2xl"></i> {post.comment || 0}
+                      <button
+                        onClick={() => handleLike(post)}
+                        className={`flex items-center gap-1 ${
+                          post.isLiked ? "text-blue-600" : ""
+                        }`}
+                      >
+                        <i className="ri-thumb-up-line text-2xl"></i>
+                        {post.likesCount}
+                      </button>
+
+                      <button
+                        onClick={() => handleDislike(post)}
+                        className={`flex items-center gap-1 ${
+                          post.isDisliked ? "text-red-500" : ""
+                        }`}
+                      >
+                        <i className="ri-thumb-down-line text-2xl"></i>
+                        {post.dislikesCount}
+                      </button>
+                    <button onClick={handleComingSoon} className="flex items-center gap-1 hover:text-green-600 transition">
+                      <i className="ri-chat-1-line text-2xl"></i>
+                      {post.commentsCount || 0}
                     </button>
                   </div>
                 </div>

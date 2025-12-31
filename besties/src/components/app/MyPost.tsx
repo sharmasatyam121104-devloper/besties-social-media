@@ -58,7 +58,7 @@ const MyPost = () => {
     <div className="space-y-6">
       {isLoading && <Skeleton active />}
 
-      {data && data.length === 0 && (
+      {data && data.posts.length === 0 && (
         <Empty description="You have not created any posts yet."/>
       )}
 

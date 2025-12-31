@@ -37,15 +37,19 @@ export interface PostInterface {
   content: string
   createdAt: string
   updatedAt: string
-  like?: number
-  dislike?: number
-  comment?: number
+  likesCount?: number
+  dislikesCount?: number
+  commentsCount?: number
+  isLiked?: boolean
+  isDisliked?: boolean
 }
 
 
 const Post = () => {
 
   const navigate = useNavigate() 
+  const [userLikes, setUserLikes] = useState<{ [key: string]: boolean }>({});
+  const [userDislikes, setUserDislikes] = useState<{ [key: string]: boolean }>({});
 
   // Fetch posts using SWR
   const { data, error, isLoading } = useSWR("/post", Fetcher)
@@ -159,6 +163,118 @@ const Post = () => {
             subTitle="We couldn’t load the data. Please try again."
           />)
   }
+
+  // ---------------- LIKE -------------------
+  const addLike = async (postId: string) => {
+    try {
+      const {data} = await HttpInterceptor.post(`/post/like/${postId}`);
+      return data
+    } 
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  const removeLike = async (postId: string) => {
+    try {
+      const {data} = await HttpInterceptor.delete(`/post/like/${postId}`);
+      return data; // { message: "Like removed" }
+    } 
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  // ---------------- DISLIKE -------------------
+  const addDislike = async (postId: string) => {
+    try {
+      const {data} = await HttpInterceptor.post(`/post/dislike/${postId}`);
+      return data; // { message: "Disliked" }
+    }
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  const removeDislike = async (postId: string) => {
+    try {
+      const {data}= await HttpInterceptor.delete(`/post/dislike/${postId}`);
+      return data; // { message: "Dislike removed" }
+    }
+    catch (err) {
+      CatchError(err)
+    }
+  };
+
+  // ---------------- COMMENT -------------------
+  // const addComment = async (postId: string, content: string) => {
+  //   try {
+  //     const {data} = await HttpInterceptor.post(`/post/comment/${postId}`, { content });
+  //     return data; // created comment object
+  //   }
+  //   catch (err) {
+  //     CatchError(err)
+  //   }
+  // };
+
+  // const removeComment = async (postId: string, commentId: string) => {
+  //   try {
+  //     const {data} = await HttpInterceptor.delete(`/post/comment/${postId}/${commentId}`);
+  //     return data; // { message: "Comment removed" }
+  //   }
+  //   catch (err) {
+  //     CatchError(err)
+  //   }
+  // };
+
+
+
+  const handleLike = async (postId: string) => {
+    try {
+      if (userLikes[postId]) {
+        await removeLike(postId);
+        setUserLikes(prev => ({ ...prev, [postId]: false }));
+      } else {
+        await addLike(postId);
+        setUserLikes(prev => ({ ...prev, [postId]: true }));
+        // Remove dislike if exists
+        if (userDislikes[postId]) {
+          await removeDislike(postId);
+          setUserDislikes(prev => ({ ...prev, [postId]: false }));
+        }
+      }
+      // Refresh posts after action
+      mutate("/post");
+    } catch (err) {
+      CatchError(err);
+    }
+  };
+
+  const handleDislike = async (postId: string) => {
+    try {
+      if (userDislikes[postId]) {
+        await removeDislike(postId);
+        setUserDislikes(prev => ({ ...prev, [postId]: false }));
+      } else {
+        await addDislike(postId);
+        setUserDislikes(prev => ({ ...prev, [postId]: true }));
+        // Remove like if exists
+        if (userLikes[postId]) {
+          await removeLike(postId);
+          setUserLikes(prev => ({ ...prev, [postId]: false }));
+        }
+      }
+      // Refresh posts after action
+      mutate("/post");
+    } catch (err) {
+      CatchError(err);
+    }
+  };
+
+  const handleComingSoon = () => {
+    message.info("This feature is coming soon!")
+  }
+
 
   return (
     <div className="space-y-8">
@@ -284,21 +400,31 @@ const Post = () => {
 
               {/* Actions */}
               <div className="border-t px-4 py-3 flex gap-12 text-sm text-gray-600">
-                <button className="flex items-center gap-1 hover:text-blue-600 transition">
-                  <i className="ri-thumb-up-line text-2xl"></i>
-                  {post.like || 0}
+                <button
+                  onClick={() => handleLike(post._id)}
+                  className={`flex items-center gap-1 ${
+                    post.isLiked ? "text-blue-600" : ""
+                  }`}
+                >
+                  <i className="ri-thumb-up-line text-2xl"></i> 
+                  {post.likesCount}
                 </button>
 
-                <button className="flex items-center gap-1 hover:text-red-500 transition">
-                  <i className="ri-thumb-down-line text-2xl"></i>
-                  {post.dislike || 0}
+                <button
+                  onClick={() => handleDislike(post._id)}
+                  className={`flex items-center gap-1 ${
+                    post.isDisliked ? "text-red-500" : ""
+                  }`}
+                >
+                  <i className="ri-thumb-down-line text-2xl"></i> 
+                  {post.dislikesCount}
                 </button>
-
-                <button className="flex items-center gap-1 hover:text-green-600 transition">
+                <button onClick={handleComingSoon} className="flex items-center gap-1 hover:text-green-600 transition">
                   <i className="ri-chat-1-line text-2xl"></i>
-                  {post.comment || 0}
+                  {post.commentsCount || 0}
                 </button>
               </div>
+
             </div>
           ))
         }

@@ -9,7 +9,9 @@ import useSWR from "swr"
 import type { PostInterface } from "./Post"
 
 const Profile: React.FC = () => {
+  
   const { data, error, isLoading } = useSWR("/post/my-profile", Fetcher)
+
   // Loading state
   if (isLoading) {
     return (
@@ -27,9 +29,6 @@ const Profile: React.FC = () => {
       </div>
     )
   }
-
-  
-
 
 
   return (

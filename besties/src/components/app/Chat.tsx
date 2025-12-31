@@ -302,7 +302,7 @@ const Chat = () => {
 
               <div className="relative max-w-[75%] bg-linear-to-r from-[#E8F0FE] to-[#FFFFFF] py-3 px-4 rounded-2xl shadow-md text-[#1B2A4C]">
 
-                <h1 className="font-semibold mb-1 text-sm opacity-70">
+                <h1 className="font-semibold mb-1 text-sm opacity-70 capitalize">
                   {item.from.fullname}
                 </h1>
 

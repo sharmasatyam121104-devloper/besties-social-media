@@ -214,3 +214,58 @@ export const logout = async(req: Request, res: Response)=>{
         catchError(error,res, "Failed to logout.")
     }
 }
+
+
+export const changePassword = async ( req: SessionInterface, res: Response ) => {
+  try {
+    const userId = req.session?.id
+    const { currentPassword, newPassword, confirmPassword } = req.body
+
+    //  Validate input 
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        throw tryError("All password fields are required",400)
+    }
+
+    if (newPassword !== confirmPassword) {
+        throw tryError("New password and confirm password do not match",400)
+    }
+
+    if (currentPassword === newPassword) {
+        throw tryError("New password must be different from current password",400)
+    }
+
+    // Find user 
+    const user = await AuthModel.findById(userId)
+    if (!user) {
+        throw tryError("User not found",404)
+    }
+
+    //  Verify current password
+    const isMatch = await bcrypt.compare(
+      currentPassword,
+      user.password
+    )
+
+    if (!isMatch) {
+        throw tryError("Current password is incorrect",401)
+    }
+
+    //  Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12)
+
+    // Update password 
+    await AuthModel.updateOne(
+        { _id: userId },
+        { $set: { password: hashedPassword } }
+    )
+
+    //  Success response 
+    return res.status(200).json({
+      message: "Password updated successfully"
+    })
+
+  } 
+  catch (error) {
+    catchError(error,res,"Failed to change password. Please try again later.")
+  }
+}

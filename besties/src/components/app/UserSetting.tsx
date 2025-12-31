@@ -36,6 +36,10 @@ const UserSettings: React.FC = () => {
   const [bio, setBio] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+
 
  
 
@@ -117,6 +121,47 @@ const UserSettings: React.FC = () => {
     message.info("This feature is coming soon!")
   }
 
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      message.error("All password fields are required.")
+      return
+    }
+
+    if (currentPassword === newPassword) {
+      message.error("Your new password must be different from your current password.")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      message.error("New password and confirm password do not match.")
+      return
+    }
+
+    try {
+      const payload = {
+        currentPassword,
+        newPassword,
+        confirmPassword
+      }
+
+      const { data } = await HttpInterceptor.put(
+        "/auth/change-password",
+        payload
+      )
+
+      message.success(data.message || "Password updated successfully.")
+
+      // reset fields after success
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (error) {
+      CatchError(error)
+    }
+  }
+
+
+
   /* ================= TABS ================= */
 
   const tabItems: TabsProps["items"] = [
@@ -172,13 +217,38 @@ const UserSettings: React.FC = () => {
       children: (
         <div className="space-y-4">
               <div>
-                <label className="block mb-1 font-medium">Email</label>
-                <Input placeholder="Enter your email" type="email" />
+                <label className="block mb-1 font-medium">Current Password</label>
+                <Input.Password
+                  type="password"
+                  placeholder="Enter your current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
               </div>
+
               <div>
-                <label className="block mb-1 font-medium">Change Password</label>
-                <Input.Password placeholder="New password" />
+                <label className="block mb-1 font-medium">New Password</label>
+                <Input.Password
+                  type="password"
+                  placeholder="New password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
               </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Confirm New Password</label>
+                <Input.Password
+                  type="password"
+                  placeholder="Confirm New password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+              <Button type="primary" onClick={handlePasswordChange}>
+                Update Password
+              </Button>
+
               <div className="flex items-center justify-between">
                 <span>Two-Factor Authentication</span>
                 <Switch checked={false} onClick={handleComingSoon}/>
